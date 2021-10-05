@@ -1,0 +1,6 @@
+[submodule "agent"]
+	path = dry-repos/agent
+	url = https://github.com/openshift/assisted-installer-agent
+[submodule "installer"]
+	path = dry-repos/installer
+	url = https://github.com/openshift/assisted-installer
