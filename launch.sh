@@ -8,7 +8,9 @@ pushd agent
 git reset --hard origin/master
 git pull
 git apply ../agent-patches/*
-skipper make -o unit-test build-image
+make -o unit-test build-image
+podman tag quay.io/ocpmetal/assisted-installer-agent:latest quay.io/otuchfel/assisted-installer-agent:swarm
+podman push quay.io/otuchfel/assisted-installer-agent:swarm
 git reset --hard origin/master
 popd
 
