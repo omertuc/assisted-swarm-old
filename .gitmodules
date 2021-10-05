@@ -1,0 +1,3 @@
+[submodule "agent"]
+	path = agent
+	url = https://github.com/openshift/assisted-installer-agent

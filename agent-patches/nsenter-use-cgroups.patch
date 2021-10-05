@@ -1,0 +1,13 @@
+diff --git a/src/util/execute.go b/src/util/execute.go
+index 03ac92d..79dfc8b 100644
+--- a/src/util/execute.go
++++ b/src/util/execute.go
+@@ -90,7 +90,7 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
+ 
+ func ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int) {
+ 	commandBase := "nsenter"
+-	arguments := []string{"-t", "1", "-m", "-i", "-n", "--", command}
++	arguments := []string{"-t", "1", "-C", "-m", "-i", "-n", "--", command}
+ 	arguments = append(arguments, args...)
+ 	return Execute(commandBase, arguments...)
+ }
