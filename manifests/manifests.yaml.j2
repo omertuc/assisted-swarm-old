@@ -1,0 +1,80 @@
+{% for i in range(1, swarm_size + 1) %}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: swarm-{{ i }}
+---
+apiVersion: extensions.hive.openshift.io/v1beta1
+kind: AgentClusterInstall
+metadata:
+  name: swarm-{{ i }}
+  namespace: swarm-{{ i }}
+spec:
+  clusterDeploymentRef:
+    name: swarm-{{ i }}
+  compute:
+  - hyperthreading: Enabled
+    name: worker
+  controlPlane:
+    hyperthreading: Enabled
+    name: master
+  imageSetRef:
+    name: swarm-{{ i }}
+  networking:
+    clusterNetwork:
+    - cidr: 10.128.0.0/14
+      hostPrefix: 23
+    serviceNetwork:
+    - 172.30.0.0/16
+  provisionRequirements:
+    controlPlaneAgents: 1
+    sshPublicKey: {{ ssh_pub_key }}
+---
+apiVersion: hive.openshift.io/v1
+kind: ClusterDeployment
+metadata:
+  name: swarm-{{ i }}
+  namespace: swarm-{{ i }}
+spec:
+  baseDomain: redhat.com
+  clusterInstallRef:
+    group: extensions.hive.openshift.io
+    kind: AgentClusterInstall
+    name: swarm-{{ i }}
+    version: v1beta1
+  clusterName: swarm-{{ i }}
+  controlPlaneConfig:
+    servingCertificates: {}
+  platform:
+    agentBareMetal:
+      agentSelector: {}
+  pullSecretRef:
+    name: swarm-{{ i }}
+---
+apiVersion: hive.openshift.io/v1
+kind: ClusterImageSet
+metadata:
+  name: swarm-{{ i }}
+spec:
+  releaseImage: {{ release_image }}
+---
+apiVersion: agent-install.openshift.io/v1beta1
+kind: InfraEnv
+metadata:
+  name: swarm-{{ i }}
+  namespace: swarm-{{ i }}
+spec:
+  pullSecretRef:
+    name: swarm-{{ i }}
+    sshAuthorizedKey: {{ ssh_pub_key }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: swarm-{{ i }}
+  namespace: swarm-{{ i }} 
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: {{ pull_secret_b64 }}
+{% endfor %}

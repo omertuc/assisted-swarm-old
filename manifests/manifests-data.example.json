@@ -1,0 +1,6 @@
+{ 
+    "swarm_size": 100,
+    "release_image": "quay.io/openshift-release-dev/ocp-release:4.8.9-x86_64",
+    "ssh_pub_key": "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLK6KYdjOHpuDxS6wFG8ts/7X6nPTHHfsXxN34PGY/HCEAwHSgw6ShWIwcqueGfR9kgPGdClWZrX25MdnF3d+6Y= swarm@swarm",
+    "pull_secret_b64": ""
+}

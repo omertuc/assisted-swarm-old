@@ -1,0 +1,222 @@
+diff --git a/Makefile b/Makefile
+index 18306f7..c9237fa 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,8 +1,8 @@
+ include .env
+ export
+ 
+-TAG := $(or $(TAG),latest)
+-ASSISTED_INSTALLER_AGENT := $(or $(ASSISTED_INSTALLER_AGENT),quay.io/ocpmetal/assisted-installer-agent:$(TAG))
++TAG := $(or $(TAG),swarm)
++ASSISTED_INSTALLER_AGENT := $(or $(ASSISTED_INSTALLER_AGENT),quay.io/otuchfel/assisted-installer-agent:$(TAG))
+ 
+ export ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+ BIN = $(ROOT_DIR)/build
+@@ -36,7 +36,7 @@ build-%: $(BIN) src/$* #lint
+ 	CGO_ENABLED=0 go build -o $(BIN)/$* src/$*/main/main.go
+ 
+ build-image: unit-test
+-	docker build ${CONTAINER_BUILD_PARAMS} -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)
++	podman build ${CONTAINER_BUILD_PARAMS} -f Dockerfile.assisted_installer_agent . -t $(ASSISTED_INSTALLER_AGENT)
+ 
+ push: build-image subsystem
+ 	docker push $(ASSISTED_INSTALLER_AGENT)
+diff --git a/src/commands/service_api.go b/src/commands/service_api.go
+index 164106c..425385d 100644
+--- a/src/commands/service_api.go
++++ b/src/commands/service_api.go
+@@ -3,7 +3,6 @@ package commands
+ import (
+ 	"github.com/go-openapi/strfmt"
+ 	"github.com/openshift/assisted-installer-agent/src/config"
+-	"github.com/openshift/assisted-installer-agent/src/scanners"
+ 	"github.com/openshift/assisted-installer-agent/src/session"
+ 	"github.com/openshift/assisted-service/client/installer"
+ 	"github.com/openshift/assisted-service/models"
+@@ -18,11 +17,12 @@ type serviceAPI interface {
+ type v2ServiceAPI struct{}
+ 
+ func (v *v2ServiceAPI) RegisterHost(s *session.InventorySession) (*models.HostRegistrationResponse, error) {
++    hostID := strfmt.UUID(config.GlobalAgentConfig.HostID)
+ 	params := &installer.V2RegisterHostParams{
+ 		InfraEnvID:            strfmt.UUID(config.GlobalAgentConfig.InfraEnvID),
+ 		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
+ 		NewHostParams: &models.HostCreateParams{
+-			HostID:                scanners.ReadId(scanners.NewGHWSerialDiscovery()),
++			HostID:                &hostID,
+ 			DiscoveryAgentVersion: config.GlobalAgentConfig.AgentVersion,
+ 		},
+ 	}
+diff --git a/src/disk_speed_check/disk_speed_check.go b/src/disk_speed_check/disk_speed_check.go
+index 7ef32e3..94cdee0 100644
+--- a/src/disk_speed_check/disk_speed_check.go
++++ b/src/disk_speed_check/disk_speed_check.go
+@@ -51,33 +51,33 @@ func (p *DiskSpeedCheck) getDiskPerf(path string) (int64, error) {
+ 		return -1, errors.New("Missing disk path")
+ 	}
+ 
+-	args := []string{"--filename", path, "--name=test", "--rw=write", "--ioengine=sync",
+-		"--size=22m", "-bs=2300", "--fdatasync=1", "--output-format=json"}
+-	stdout, stderr, exitCode := p.dependecies.Execute("fio", args...)
+-	if exitCode != 0 {
+-		return -1, errors.Errorf("Could not get I/O performance for path %s: (fio exit code %d) %s",
+-			path, exitCode, stderr)
+-	}
+-
+-	type FIO struct {
+-		Jobs []struct {
+-			Sync struct {
+-				LatNs struct {
+-					Percentile struct {
+-						Nine9_000000 int64 `json:"99.000000"`
+-					} `json:"percentile"`
+-				} `json:"lat_ns"`
+-			} `json:"sync"`
+-		} `json:"jobs"`
+-	}
+-
+-	fio := FIO{}
+-	err := json.Unmarshal([]byte(stdout), &fio)
+-	if err != nil {
+-		return -1, errors.Errorf("Failed to get sync duration from I/O info for path %s", path)
+-	}
+-	syncDurationInNS := fio.Jobs[0].Sync.LatNs.Percentile.Nine9_000000
+-	return time.Duration(syncDurationInNS).Milliseconds(), nil
++	// args := []string{"--filename", path, "--name=test", "--rw=write", "--ioengine=sync",
++	// 	"--size=22m", "-bs=2300", "--fdatasync=1", "--output-format=json"}
++	// stdout, stderr, exitCode := p.dependecies.Execute("fio", args...)
++	// if exitCode != 0 {
++	// 	return -1, errors.Errorf("Could not get I/O performance for path %s: (fio exit code %d) %s",
++	// 		path, exitCode, stderr)
++	// }
++
++	// type FIO struct {
++	// 	Jobs []struct {
++	// 		Sync struct {
++	// 			LatNs struct {
++	// 				Percentile struct {
++	// 					Nine9_000000 int64 `json:"99.000000"`
++	// 				} `json:"percentile"`
++	// 			} `json:"lat_ns"`
++	// 		} `json:"sync"`
++	// 	} `json:"jobs"`
++	// }
++
++	// fio := FIO{}
++	// err := json.Unmarshal([]byte(stdout), &fio)
++	// if err != nil {
++	// 	return -1, errors.Errorf("Failed to get sync duration from I/O info for path %s", path)
++	// }
++	// syncDurationInNS := fio.Jobs[0].Sync.LatNs.Percentile.Nine9_000000
++	return time.Duration(1000).Milliseconds(), nil
+ }
+ 
+ func createResponse(ioSyncDuration int64, path string) string {
+diff --git a/src/util/execute.go b/src/util/execute.go
+index 03ac92d..d13e156 100644
+--- a/src/util/execute.go
++++ b/src/util/execute.go
+@@ -9,6 +9,7 @@ import (
+ 
+ 	"github.com/hashicorp/go-multierror"
+ 	log "github.com/sirupsen/logrus"
++    "github.com/openshift/assisted-installer-agent/src/config"
+ )
+ 
+ const TimeoutExitCode = 124
+@@ -35,12 +36,84 @@ func getErrorStr(err error, stderr *bytes2.Buffer) string {
+ 	return ""
+ }
+ 
++func appendHostIDToContainerName(containerName string, hostID string, args ...string) []string {
++    // We have to handle many different cases of how --name appears in the command
++
++    // Handle podman args as separate args
++    for i := 0; i < len(args) - 1; i++ {
++        if args[i] == "--name" && args[i + 1] == containerName {
++            args[i + 1] = fmt.Sprintf("%s-%s", containerName, hostID)
++            return args
++        }
++    }
++
++    // Handle podman args as separate args but with the --name=%s in a single arg
++    for i := 0; i < len(args); i++ {
++        if args[i] == fmt.Sprintf("--name=%s", containerName) {
++            args[i] = fmt.Sprintf("--name=%s-%s", containerName, hostID)
++            return args
++        }
++    }
++
++    // Handle all args in a single string ("bash", "-c", "podman run ...") with --name=%s
++    for i := 0; i < len(args); i++ {
++        if strings.Contains(args[i], fmt.Sprintf("--name=%s", containerName)) {
++            args[i] = strings.Replace(
++                args[i],
++                fmt.Sprintf("--name=%s", containerName),
++                fmt.Sprintf("--name=%s-%s", containerName, hostID),
++                1,
++            )
++            return args
++        }
++    }
++
++    // Handle all args in a single string ("bash", "-c", "podman run ...") with --name %s
++    for i := 0; i < len(args); i++ {
++        if strings.Contains(args[i], fmt.Sprintf("--name %s", containerName)) {
++            args[i] = strings.Replace(
++                args[i],
++                fmt.Sprintf("--name %s", containerName),
++                fmt.Sprintf("--name %s-%s", containerName, hostID),
++                1,
++            )
++            return args
++        }
++    }
++
++    return args
++}
++
+ func Execute(command string, args ...string) (stdout string, stderr string, exitCode int) {
++    stepsThatHaveContainerName := []string{
++        "next-step-runner",
++        "disk_performance",
++        "logs-sender",
++        "assisted-installer",
++        "container_image_availability",
++        "free_addresses_scanner",
++    }
++
++    for _, step := range stepsThatHaveContainerName {
++        args = appendHostIDToContainerName(step, config.GlobalAgentConfig.HostID, args...)
++    }
++
++    // Avoid destroying disks
++    for i := 0; i < len(args); i++ {
++        if strings.Contains(args[i], "dd if=") {
++            args[i] = strings.Replace(args[i], "dd if=", "true if=", 1)
++        }
++    }
++
+ 	cmd := exec.Command(command, args...)
+ 	var stdoutBytes, stderrBytes bytes2.Buffer
+ 	cmd.Stdout = &stdoutBytes
+ 	cmd.Stderr = &stderrBytes
+-	err := cmd.Run()
++
++	log.Infof("@@@@@@@@@@@@@@@@@@@@@@@@@@ %v %+v", command, strings.Join(args, " ^ "))
++
++    err := cmd.Run()
++
+ 	return stdoutBytes.String(), getErrorStr(err, &stderrBytes), getExitCode(err)
+ }
+ 
+@@ -90,7 +163,7 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
+ 
+ func ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int) {
+ 	commandBase := "nsenter"
+-	arguments := []string{"-t", "1", "-m", "-i", "-n", "--", command}
++	arguments := []string{"-t", "1", "-C", "-m", "-i", "-n", "--", command}
+ 	arguments = append(arguments, args...)
+ 	return Execute(commandBase, arguments...)
+ }
