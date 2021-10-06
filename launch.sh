@@ -5,8 +5,8 @@ set -euo pipefail
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
 pushd agent
+git fetch -a
 git reset --hard origin/master
-git pull
 git apply ../agent-patches/*
 sudo make -o unit-test build-image
 sudo podman tag quay.io/ocpmetal/assisted-installer-agent:latest quay.io/otuchfel/assisted-installer-agent:swarm
