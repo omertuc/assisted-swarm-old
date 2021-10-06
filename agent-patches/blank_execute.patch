@@ -1,0 +1,27 @@
+diff --git a/src/util/execute.go b/src/util/execute.go
+index 03ac92d..38306d6 100644
+--- a/src/util/execute.go
++++ b/src/util/execute.go
+@@ -40,7 +40,21 @@ func Execute(command string, args ...string) (stdout string, stderr string, exit
+ 	var stdoutBytes, stderrBytes bytes2.Buffer
+ 	cmd.Stdout = &stdoutBytes
+ 	cmd.Stderr = &stderrBytes
+-	err := cmd.Run()
++
++    isInstall := false
++    for _, arg := range args { 
++        if strings.Contains(arg, "install") {
++            isInstall = true
++        }
++    }
++
++    log.Infof("@@@@@@@@@@@@@@@@@@@@@@@@@@ %v %v", isInstall, args)
++
++    err := (error)(nil)
++    if !isInstall {
++        err = cmd.Run()
++    }
++
+ 	return stdoutBytes.String(), getErrorStr(err, &stderrBytes), getExitCode(err)
+ }
+ 
