@@ -25,4 +25,4 @@ echo $COPY_CMD
 echo $AGENT_CMD
 
 sudo $COPY_CMD
-sudo $AGENT_CMD
+sudo $(echo $AGENT_CMD | sed -e "s/--infra-env-id/--host-id $(uuid) --ifra-env-id/")

@@ -1,0 +1,13 @@
+diff --git a/src/commands/service_api.go b/src/commands/service_api.go
+index 164106c..877fb4b 100644
+--- a/src/commands/service_api.go
++++ b/src/commands/service_api.go
+@@ -22,7 +22,7 @@ func (v *v2ServiceAPI) RegisterHost(s *session.InventorySession) (*models.HostRe
+ 		InfraEnvID:            strfmt.UUID(config.GlobalAgentConfig.InfraEnvID),
+ 		DiscoveryAgentVersion: &config.GlobalAgentConfig.AgentVersion,
+ 		NewHostParams: &models.HostCreateParams{
+-			HostID:                scanners.ReadId(scanners.NewGHWSerialDiscovery()),
++			HostID:                strfmt.UUID(config.GlobalAgentConfig.HostID),
+ 			DiscoveryAgentVersion: config.GlobalAgentConfig.AgentVersion,
+ 		},
+ 	}
