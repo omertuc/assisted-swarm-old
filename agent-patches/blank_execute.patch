@@ -15,7 +15,7 @@ index 03ac92d..38306d6 100644
 +        }
 +    }
 +
-+    log.Infof("@@@@@@@@@@@@@@@@@@@@@@@@@@ %v %v", isInstall, args)
++    log.Infof("@@@@@@@@@@@@@@@@@@@@@@@@@@ %v %v %+v", isInstall, command, args)
 +
 +    err := cmd.Run()
 +    if !isInstall {
