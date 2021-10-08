@@ -17,9 +17,9 @@ index 03ac92d..38306d6 100644
 +
 +    log.Infof("@@@@@@@@@@@@@@@@@@@@@@@@@@ %v %v", isInstall, args)
 +
-+    err := (error)(nil)
++    err := cmd.Run()
 +    if !isInstall {
-+        err = cmd.Run()
++        // err = cmd.Run()
 +    }
 +
  	return stdoutBytes.String(), getErrorStr(err, &stderrBytes), getExitCode(err)
