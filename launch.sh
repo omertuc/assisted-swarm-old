@@ -23,4 +23,5 @@ export COPY_CMD=$(<<< $IGNITION jq '.systemd.units[].contents' -r | rg "podman r
 set -x 
 sudo $COPY_CMD
 
-sudo $(echo $AGENT_CMD | sed -e "s/--infra-env-id/--host-id $(uuid) --infra-env-id/")
+echo $AGENT_CMD
+echo sudo $(echo $AGENT_CMD | sed -e "s/--infra-env-id/--host-id $(uuid) --infra-env-id/")
