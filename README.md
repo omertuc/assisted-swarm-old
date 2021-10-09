@@ -128,7 +128,7 @@ The following changes are being applied to the controller in the installer repo 
   cluster as much as we reasonably can.
 
 - Disable `HackDNSAddressConflict` - it's too complicated to mock k8s API calls for this and the
-  service could't care less about it, so just disable it altogether.
+  service couldn't care less about it, so just disable it altogether.
 
 - WIP
 
