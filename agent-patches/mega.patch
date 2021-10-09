@@ -49,7 +49,7 @@ index 164106c..425385d 100644
  		},
  	}
 diff --git a/src/util/execute.go b/src/util/execute.go
-index 03ac92d..9e3e447 100644
+index 03ac92d..d13e156 100644
 --- a/src/util/execute.go
 +++ b/src/util/execute.go
 @@ -9,6 +9,7 @@ import (
@@ -60,7 +60,7 @@ index 03ac92d..9e3e447 100644
  )
  
  const TimeoutExitCode = 124
-@@ -35,12 +36,76 @@ func getErrorStr(err error, stderr *bytes2.Buffer) string {
+@@ -35,12 +36,84 @@ func getErrorStr(err error, stderr *bytes2.Buffer) string {
  	return ""
  }
  
@@ -125,6 +125,14 @@ index 03ac92d..9e3e447 100644
 +    for _, step := range stepsThatHaveContainerName {
 +        args = appendHostIDToContainerName(step, config.GlobalAgentConfig.HostID, args...)
 +    }
++
++    // Avoid destroying disks
++    for i := 0; i < len(args); i++ {
++        if strings.Contains(args[i], "dd if=") {
++            args[i] = strings.Replace(args[i], "dd if=", "true if=", 1)
++        }
++    }
++
  	cmd := exec.Command(command, args...)
  	var stdoutBytes, stderrBytes bytes2.Buffer
  	cmd.Stdout = &stdoutBytes
@@ -138,7 +146,7 @@ index 03ac92d..9e3e447 100644
  	return stdoutBytes.String(), getErrorStr(err, &stderrBytes), getExitCode(err)
  }
  
-@@ -90,7 +155,7 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
+@@ -90,7 +163,7 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
  
  func ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int) {
  	commandBase := "nsenter"
