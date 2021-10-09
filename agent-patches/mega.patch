@@ -49,7 +49,7 @@ index 164106c..425385d 100644
  		},
  	}
 diff --git a/src/util/execute.go b/src/util/execute.go
-index 03ac92d..911962e 100644
+index 03ac92d..9e3e447 100644
 --- a/src/util/execute.go
 +++ b/src/util/execute.go
 @@ -9,6 +9,7 @@ import (
@@ -60,7 +60,7 @@ index 03ac92d..911962e 100644
  )
  
  const TimeoutExitCode = 124
-@@ -35,12 +36,74 @@ func getErrorStr(err error, stderr *bytes2.Buffer) string {
+@@ -35,12 +36,76 @@ func getErrorStr(err error, stderr *bytes2.Buffer) string {
  	return ""
  }
  
@@ -97,14 +97,16 @@ index 03ac92d..911962e 100644
 +    }
 +
 +    // Handle all args in a single string ("bash", "-c", "podman run ...") with --name %s
-+    if strings.Contains(args[i], fmt.Sprintf("--name %s", containerName)) {
-+        args[i] = strings.Replace(
-+            args[i],
-+            fmt.Sprintf("--name %s", containerName),
-+            fmt.Sprintf("--name %s-%s", containerName, hostID),
-+            1,
-+        )
-+        return args
++    for i := 0; i < len(args); i++ {
++        if strings.Contains(args[i], fmt.Sprintf("--name %s", containerName)) {
++            args[i] = strings.Replace(
++                args[i],
++                fmt.Sprintf("--name %s", containerName),
++                fmt.Sprintf("--name %s-%s", containerName, hostID),
++                1,
++            )
++            return args
++        }
 +    }
 +
 +    return args
@@ -136,7 +138,7 @@ index 03ac92d..911962e 100644
  	return stdoutBytes.String(), getErrorStr(err, &stderrBytes), getExitCode(err)
  }
  
-@@ -90,7 +153,7 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
+@@ -90,7 +155,7 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
  
  func ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int) {
  	commandBase := "nsenter"
