@@ -36,8 +36,10 @@ with all the API changes / agent behavior changes that will be added in the futu
 Option (2) is what this repo is.
 
 # Out-of-scope / TODO
-- BMAC testing - there's no bare metal emulation here
-- Image service load testing - at no point during the swarm
+- BMAC testing - there's no bare metal (OOBM, IPMI, RedFish, etc) emulation here
+- Image service load testing - at no point while running the swarm do we download
+  the actual ISO images - we simply download the ignition file from the service
+  API endpoint and copy the commands from the systemd unit.
 
 # Technical
 This repo allows you to build & run a customized no-op version of:
