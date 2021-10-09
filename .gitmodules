@@ -1,3 +1,6 @@
 [submodule "agent"]
 	path = agent
 	url = https://github.com/openshift/assisted-installer-agent
+[submodule "installer"]
+	path = installer
+	url = https://github.com/omertuc/assisted-installer

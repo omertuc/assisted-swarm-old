@@ -1,0 +1,142 @@
+diff --git a/Makefile b/Makefile
+index b4940cd..2c6c7f9 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,6 @@
+ CONTAINER_COMMAND = $(shell if [ -x "$(shell which docker)" ];then echo "docker" ; else echo "podman";fi)
+-INSTALLER := $(or ${INSTALLER},quay.io/ocpmetal/assisted-installer:stable)
+-CONTROLLER :=  $(or ${CONTROLLER}, quay.io/ocpmetal/assisted-installer-controller:stable)
++INSTALLER := $(or ${INSTALLER},quay.io/otuchfel/assisted-installer:swarm)
++CONTROLLER :=  $(or ${CONTROLLER}, quay.io/otuchfel/assisted-installer-controller:swarm)
+ ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+ NAMESPACE := $(or ${NAMESPACE},assisted-installer)
+ GIT_REVISION := $(shell git rev-parse HEAD)
+diff --git a/src/installer/installer.go b/src/installer/installer.go
+index b555868..12ffa23 100644
+--- a/src/installer/installer.go
++++ b/src/installer/installer.go
+@@ -669,14 +669,14 @@ func (i *installer) cleanupInstallDevice() error {
+ 		return nil
+ 	}
+ 
+-	err = i.ops.RemoveVG(vgName)
++	// err = i.ops.RemoveVG(vgName)
+ 	if err != nil {
+ 		return err
+ 	}
+ 
+-	_ = i.ops.Wipefs(i.Device)
++	// _ = i.ops.Wipefs(i.Device)
+ 
+-	return i.ops.RemovePV(i.Device)
++	return err // i.ops.RemovePV(i.Device)
+ }
+ 
+ func (i *installer) verifyHostCanMoveToConfigurationStatus(inventoryHostsMapWithIp map[string]inventory_client.HostData) {
+diff --git a/src/main/assisted-installer-controller/assisted_installer_main.go b/src/main/assisted-installer-controller/assisted_installer_main.go
+index 73ec8d4..cfa3b55 100644
+--- a/src/main/assisted-installer-controller/assisted_installer_main.go
++++ b/src/main/assisted-installer-controller/assisted_installer_main.go
+@@ -9,6 +9,8 @@ import (
+ 
+ 	"github.com/kelseyhightower/envconfig"
+ 	assistedinstallercontroller "github.com/openshift/assisted-installer/src/assisted_installer_controller"
++	"github.com/golang/mock/gomock"
++	. "github.com/onsi/ginkgo"
+ 	"github.com/openshift/assisted-installer/src/inventory_client"
+ 	"github.com/openshift/assisted-installer/src/k8s_client"
+ 	"github.com/openshift/assisted-installer/src/ops"
+@@ -17,6 +19,10 @@ import (
+ 	"github.com/openshift/assisted-service/models"
+ 	"github.com/openshift/assisted-service/pkg/secretdump"
+ 	"github.com/sirupsen/logrus"
++	"github.com/openshift/assisted-installer/src/common"
++
++	v1 "k8s.io/api/core/v1"
++	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+ )
+ 
+ // Added this way to be able to test it
+@@ -31,6 +37,23 @@ var Options struct {
+ 
+ const maximumErrorsBeforeExit = 3
+ 
++func prepareSwarmMock(mockk8sclient *k8s_client.MockK8SClient, logger *logrus.Logger) {
++    // Called by main
++    mockk8sclient.EXPECT().SetProxyEnvVars().Return(nil).AnyTimes()
++
++    // Called by GetReadyState to make sure we're online
++    mockk8sclient.EXPECT().ListNodes().Return(nil, nil).AnyTimes()
++
++    // Called a lot
++    mockk8sclient.EXPECT().CreateEvent(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Do(func (args ...string) {
++        logger.Infof("Fake creating event %+v", args);
++    }).AnyTimes()
++
++    mockk8sclient.EXPECT().GetPods("assisted-installer", gomock.Any(), "").Return([]v1.Pod{{TypeMeta: metav1.TypeMeta{},
++        ObjectMeta: metav1.ObjectMeta{Name: common.AssistedControllerPrefix + "aasdasd"},
++        Status:     v1.PodStatus{Phase: "Running"}}}, nil).Times(1)
++}
++
+ func main() {
+ 	logger := logrus.New()
+ 
+@@ -41,11 +64,14 @@ func main() {
+ 
+ 	logger.Infof("Start running Assisted-Controller. Configuration is:\n %s", secretdump.DumpSecretStruct(Options.ControllerConfig))
+ 
+-	kc, err := k8s_client.NewK8SClient("", logger)
++    ctrl := gomock.NewController(GinkgoT())
++    kc := k8s_client.NewMockK8SClient(ctrl)
+ 	if err != nil {
+ 		log.Fatalf("Failed to create k8 client %v", err)
+ 	}
+ 
++	prepareSwarmMock(kc, logger)
++
+ 	err = kc.SetProxyEnvVars()
+ 	if err != nil {
+ 		log.Fatalf("Failed to set env vars for installer-controller pod %v", err)
+@@ -62,7 +88,7 @@ func main() {
+ 		Options.ControllerConfig,
+ 		ops.NewOps(logger, false),
+ 		client,
+-		kc,
++		nil,
+ 	)
+ 
+ 	var wg sync.WaitGroup
+@@ -70,8 +96,9 @@ func main() {
+ 
+ 	// No need to cancel with context, will finish quickly
+ 	// we should fix try to fix dns service issue as soon as possible
+-	go assistedController.HackDNSAddressConflict(&wg)
+-	wg.Add(1)
++	// Comment this part out so we don't have to adjust the mock for it, it's useless for swarm simulation
++	// go assistedController.HackDNSAddressConflict(&wg)
++	// wg.Add(1)
+ 
+ 	assistedController.SetReadyState()
+ 
+diff --git a/src/ops/ops.go b/src/ops/ops.go
+index 03abde2..a1c1820 100644
+--- a/src/ops/ops.go
++++ b/src/ops/ops.go
+@@ -183,7 +183,7 @@ func (o *ops) WriteImageToDisk(ignitionPath string, device string, progressRepor
+ 	allArgs := installerArgs(ignitionPath, device, extraArgs)
+ 	o.log.Infof("Writing image and ignition to disk with arguments: %v", allArgs)
+ 	_, err := o.ExecPrivilegeCommand(NewCoreosInstallerLogWriter(o.log, progressReporter, config.GlobalConfig.InfraEnvID, config.GlobalConfig.HostID),
+-		"coreos-installer", allArgs...)
++		"swarm-installer", allArgs...)
+ 	return err
+ }
+ 
+@@ -233,7 +233,7 @@ func (o *ops) SetBootOrder(device string) error {
+ 	o.log.Info("Setting efibootmgr to boot from disk")
+ 
+ 	// efi-system is installed onto partition 2
+-	_, err = o.ExecPrivilegeCommand(o.logWriter, "efibootmgr", "-v", "-d", device, "-p", "2", "-c", "-L", "Red Hat Enterprise Linux", "-l", o.getEfiFilePath())
++	// _, err = o.ExecPrivilegeCommand(o.logWriter, "efibootmgr", "-v", "-d", device, "-p", "2", "-c", "-L", "Red Hat Enterprise Linux", "-l", o.getEfiFilePath())
+ 	if err != nil {
+ 		o.log.Errorf("Failed to set efibootmgr to boot from disk %s, err: %s", device, err)
+ 		return err
