@@ -1,0 +1,15 @@
+diff --git a/Makefile b/Makefile
+index 18306f7..af9d712 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,8 +1,8 @@
+ include .env
+ export
+ 
+-TAG := $(or $(TAG),latest)
+-ASSISTED_INSTALLER_AGENT := $(or $(ASSISTED_INSTALLER_AGENT),quay.io/ocpmetal/assisted-installer-agent:$(TAG))
++TAG := $(or $(TAG),swarm)
++ASSISTED_INSTALLER_AGENT := $(or $(ASSISTED_INSTALLER_AGENT),quay.io/otuchfel/assisted-installer-agent:$(TAG))
+ 
+ export ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+ BIN = $(ROOT_DIR)/build
