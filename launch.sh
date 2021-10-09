@@ -16,4 +16,4 @@ set -x
 sudo $COPY_CMD
 
 echo $AGENT_CMD
-echo sudo $(echo $AGENT_CMD | sed -e "s/--infra-env-id/--host-id $(uuid) --infra-env-id/")
+sudo $(echo $AGENT_CMD | sed -e "s/--infra-env-id/--host-id $(uuid) --infra-env-id/")
