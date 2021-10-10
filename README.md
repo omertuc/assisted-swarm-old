@@ -39,7 +39,6 @@ with all the API changes / agent behavior changes that will be added in the futu
 Option (2) is what this repo is.
 
 # Non-goals / TODO
-
 This repo, in its current state, does not deal with testing the following mechanisms -
 
 - BMAC testing - there's no bare metal (OOBM, IPMI, RedFish, etc) emulation here. No BareMetalHost
