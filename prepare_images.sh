@@ -24,3 +24,4 @@ sudo podman push quay.io/otuchfel/assisted-installer-controller:swarm
 git reset --hard origin/replace
 popd
 
+sudo cp $SCRIPT_DIR/swarm-installer /usr/local/bin/swarm-installer
