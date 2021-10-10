@@ -15,6 +15,9 @@ sudo tee /root/.docker/config.json >/dev/null <<< $PULL_SECRET
 sudo killall agent || true
 sudo podman ps -q | xargs sudo podman kill || true
 
+sudo cp $SCRIPT_DIR/swarm-installer /usr/local/bin/swarm-installer
+sudo touch /opt/openshift/.bootkube.done
+
 export PULL_SECRET=$(curl -s "${SERVICE_ENDPOINT}/api/assisted-install/v2/infra-envs/${arbitrary_infraenv}/downloads/files?file_name=discovery.ign")
 export IGNITION=$(curl -s "${SERVICE_ENDPOINT}/api/assisted-install/v2/infra-envs/${arbitrary_infraenv}/downloads/files?file_name=discovery.ign")
 export COPY_CMD=$(<<< $IGNITION jq '.systemd.units[].contents' -r | rg "podman run" | cut -d'=' -f2-)
