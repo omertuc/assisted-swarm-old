@@ -12,9 +12,22 @@ index b4940cd..2c6c7f9 100644
  NAMESPACE := $(or ${NAMESPACE},assisted-installer)
  GIT_REVISION := $(shell git rev-parse HEAD)
 diff --git a/src/installer/installer.go b/src/installer/installer.go
-index b555868..3ce0eb7 100644
+index b555868..858c675 100644
 --- a/src/installer/installer.go
 +++ b/src/installer/installer.go
+@@ -149,9 +149,9 @@ func (i *installer) InstallNode() error {
+ 	//update installation progress
+ 	i.UpdateHostInstallProgress(models.HostStageRebooting, "")
+ 	//reboot
+-	if err = i.ops.Reboot(); err != nil {
+-		return err
+-	}
++	// if err = i.ops.Reboot(); err != nil {
++	// 	return err
++	// }
+ 	return nil
+ }
+ 
 @@ -218,13 +218,13 @@ func (i *installer) startBootstrap() error {
  		return err
  	}
