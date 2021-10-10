@@ -4,7 +4,8 @@ set -euo pipefail
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
-export SERVICE_ENDPOINT=http://192.168.39.239:30478
+# Service endpoint should look something like http://192.168.39.239:30478
+echo Speaking to service at $SERVICE_ENDPOINT
 
 arbitrary_infraenv=$(./list_infraenvs.sh | head -1)
 
