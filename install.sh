@@ -1,10 +1,14 @@
 #!/bin/bash
 
-set -euo pipefail
+set -euxo pipefail
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
 all_swarm_namespaces=$(oc get namespaces -ojson -A | jq '.items[] | select(.metadata.name | test("swarm.*")) | .metadata.name' -r)
+
+echo Found the following namespaces:
+echo $all_swarm_namespaces
+
 while read -r namespace; do 
     echo Preparing $namespace for installation
     agent_name=$(oc get agent -n $namespace -ojson | jq '.items[].metadata.name' -r)
