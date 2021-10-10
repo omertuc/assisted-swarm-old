@@ -12,7 +12,7 @@ index b4940cd..2c6c7f9 100644
  NAMESPACE := $(or ${NAMESPACE},assisted-installer)
  GIT_REVISION := $(shell git rev-parse HEAD)
 diff --git a/src/installer/installer.go b/src/installer/installer.go
-index b555868..b0f5ae5 100644
+index b555868..3ce0eb7 100644
 --- a/src/installer/installer.go
 +++ b/src/installer/installer.go
 @@ -218,13 +218,13 @@ func (i *installer) startBootstrap() error {
@@ -84,6 +84,15 @@ index b555868..b0f5ae5 100644
  }
  
  func (i *installer) verifyHostCanMoveToConfigurationStatus(inventoryHostsMapWithIp map[string]inventory_client.HostData) {
+@@ -743,7 +743,7 @@ func (i *installer) createSingleNodeMasterIgnition() (string, error) {
+ 		return "", err
+ 	}
+ 	i.Config.Role = string(models.HostRoleMaster)
+-	err = i.updateSingleNodeIgnition(singleNodeMasterIgnitionPath)
++	// err = i.updateSingleNodeIgnition(singleNodeMasterIgnitionPath)
+ 	if err != nil {
+ 		return "", err
+ 	}
 diff --git a/src/main/assisted-installer-controller/assisted_installer_main.go b/src/main/assisted-installer-controller/assisted_installer_main.go
 index 73ec8d4..cfa3b55 100644
 --- a/src/main/assisted-installer-controller/assisted_installer_main.go
