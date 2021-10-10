@@ -12,9 +12,60 @@ index b4940cd..2c6c7f9 100644
  NAMESPACE := $(or ${NAMESPACE},assisted-installer)
  GIT_REVISION := $(shell git rev-parse HEAD)
 diff --git a/src/installer/installer.go b/src/installer/installer.go
-index b555868..12ffa23 100644
+index b555868..b0f5ae5 100644
 --- a/src/installer/installer.go
 +++ b/src/installer/installer.go
+@@ -218,13 +218,13 @@ func (i *installer) startBootstrap() error {
+ 		return err
+ 	}
+ 
+-	err = i.extractIgnitionToFS(ignitionPath)
++	// err = i.extractIgnitionToFS(ignitionPath)
+ 	if err != nil {
+ 		return err
+ 	}
+ 
+ 	if i.HighAvailabilityMode != models.ClusterHighAvailabilityModeNone {
+-		err = i.generateSshKeyPair()
++		// err = i.generateSshKeyPair()
+ 		if err != nil {
+ 			return err
+ 		}
+@@ -235,7 +235,7 @@ func (i *installer) startBootstrap() error {
+ 	}
+ 
+ 	// reload systemd configurations from filesystem and regenerate dependency trees
+-	err = i.ops.SystemctlAction("daemon-reload")
++	// err = i.ops.SystemctlAction("daemon-reload")
+ 	if err != nil {
+ 		return err
+ 	}
+@@ -245,14 +245,14 @@ func (i *installer) startBootstrap() error {
+ 	   remove the work done by 30-local-dns-prepender. This will cause DNS issue in bootkube and it will fail to complete
+ 	   successfully
+ 	*/
+-	err = i.checkLocalhostName()
++	// err = i.checkLocalhostName()
+ 	if err != nil {
+ 		i.log.Error(err)
+ 		return err
+ 	}
+ 
+ 	// restart NetworkManager to trigger NetworkManager/dispatcher.d/30-local-dns-prepender
+-	err = i.ops.SystemctlAction("restart", "NetworkManager.service")
++	// err = i.ops.SystemctlAction("restart", "NetworkManager.service")
+ 	if err != nil {
+ 		i.log.Error(err)
+ 		return err
+@@ -263,7 +263,7 @@ func (i *installer) startBootstrap() error {
+ 		return err
+ 	}
+ 
+-	servicesToStart := []string{"bootkube.service", "approve-csr.service", "progress.service"}
++	servicesToStart := []string{}
+ 	for _, service := range servicesToStart {
+ 		err = i.ops.SystemctlAction("start", service)
+ 		if err != nil {
 @@ -669,14 +669,14 @@ func (i *installer) cleanupInstallDevice() error {
  		return nil
  	}
