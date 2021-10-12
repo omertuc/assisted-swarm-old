@@ -9,7 +9,9 @@ echo Speaking to service at $SERVICE_ENDPOINT
 
 arbitrary_infraenv=$(./list_infraenvs.sh | head -1)
 
-PULL_SECRET=$(oc get secret -n swarm-1 swarm-1 -ojson | jq '.data.".dockerconfigjson"' -r | base64 -d)
+sudo dnf install -y $(cat dnf.txt)
+
+PULL_SECRET=$(oc get secret -n swarm-3 swarm-3 -ojson | jq '.data.".dockerconfigjson"' -r | base64 -d)
 sudo mkdir -p /root/.docker
 sudo tee /root/.docker/config.json >/dev/null <<< $PULL_SECRET
 
@@ -17,6 +19,7 @@ sudo killall agent || true
 sudo podman ps -q | xargs sudo podman kill || true
 
 sudo cp $SCRIPT_DIR/swarm-installer /usr/local/bin/swarm-installer
+sudo mkdir -p /opt/openshift/
 sudo touch /opt/openshift/.bootkube.done
 
 export PULL_SECRET=$(curl -k -s "${SERVICE_ENDPOINT}/api/assisted-install/v2/infra-envs/${arbitrary_infraenv}/downloads/files?file_name=discovery.ign")
