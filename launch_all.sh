@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -euxo pipefail
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
@@ -19,8 +19,14 @@ sudo podman ps -q | xargs sudo podman kill || true
 sudo cp $SCRIPT_DIR/swarm-installer /usr/local/bin/swarm-installer
 sudo touch /opt/openshift/.bootkube.done
 
-export PULL_SECRET=$(curl -s "${SERVICE_ENDPOINT}/api/assisted-install/v2/infra-envs/${arbitrary_infraenv}/downloads/files?file_name=discovery.ign")
-export IGNITION=$(curl -s "${SERVICE_ENDPOINT}/api/assisted-install/v2/infra-envs/${arbitrary_infraenv}/downloads/files?file_name=discovery.ign")
+export PULL_SECRET=$(curl -k -s "${SERVICE_ENDPOINT}/api/assisted-install/v2/infra-envs/${arbitrary_infraenv}/downloads/files?file_name=discovery.ign")
+export IGNITION=$(curl -k -s "${SERVICE_ENDPOINT}/api/assisted-install/v2/infra-envs/${arbitrary_infraenv}/downloads/files?file_name=discovery.ign")
+
+if [[ $IGNITION == "" ]]; then
+	echo "Failed to fetch ignition file"
+	exit 1
+fi
+
 export COPY_CMD=$(<<< $IGNITION jq '.systemd.units[].contents' -r | rg "podman run" | cut -d'=' -f2-)
 sudo $COPY_CMD
 

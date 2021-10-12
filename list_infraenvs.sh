@@ -6,11 +6,8 @@ SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
 function infraenvs() {
     # Extract infra-env IDs from infraenv URLs
-    oc get infraenv -A -ojson | jq '.items[].status.isoDownloadURL' -r |\
-                    sed -e 's/infra-envs/#/' |\
-                    sed -e 's/downloads/#/' |\
-                    cut -d'#' -f2 |\
-                    cut -d'/' -f2
+    oc get infraenv -A -ojson | jq '.items[] | select(.metadata.namespace | test("swarm-")) | .status.isoDownloadURL' -r \
+	    | grep --extended-regexp --only-matching --color=never '[[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12}' || true 
 }
 
 function all_available() {

@@ -9,7 +9,7 @@ echo "Pushing to quay user ${QUAY_ACCOUNT}"
 pushd agent
 git fetch -a
 git reset --hard origin/master
-git apply ../agent-patches/*
+git apply ../agent-patches/*.patch
 make -o unit-test build-image
 podman push quay.io/${QUAY_ACCOUNT}/assisted-installer-agent:swarm
 git reset --hard origin/master
@@ -18,7 +18,7 @@ popd
 pushd installer
 git fetch -a
 git reset --hard origin/replace
-git apply ../installer-patches/*
+git apply ../installer-patches/*.patch
 make installer-image
 make controller-image
 podman push quay.io/${QUAY_ACCOUNT}/assisted-installer:swarm
