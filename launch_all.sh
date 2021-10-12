@@ -34,6 +34,13 @@ fi
 export COPY_CMD=$(<<< $IGNITION jq '.systemd.units[].contents' -r | rg "podman run" | cut -d'=' -f2-)
 sudo $COPY_CMD
 
+x=10
 for infra_env in $(./list_infraenvs.sh); do 
     INFRA_ENV_ID=${infra_env} ./launch.sh &
+    x=$((x - 1))
+    echo $x
+    if [[ $x == "0" ]]; then
+	sleep 10;
+	x=10
+    fi
 done
