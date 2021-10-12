@@ -113,6 +113,22 @@ index 7ef32e3..94cdee0 100644
  }
  
  func createResponse(ioSyncDuration int64, path string) string {
+diff --git a/src/inventory/disks.go b/src/inventory/disks.go
+index 4535d27..574a2c6 100644
+--- a/src/inventory/disks.go
++++ b/src/inventory/disks.go
+@@ -125,9 +125,9 @@ func (d *disks) getSMART(path string) string {
+ 	// We ignore the exit code and stderr because stderr is empty and
+ 	// stdout contains the exit code in `--json=c` mode. Whatever the exit
+ 	// code is, we want to relay the information to the service
+-	stdout, _, _ := d.dependencies.Execute("smartctl", "--xall", "--json=c", path)
++	// stdout, _, _ := d.dependencies.Execute("smartctl", "--xall", "--json=c", path)
+ 
+-	return stdout
++	return `{"json_format_version":[1,0],"smartctl":{"version":[7,1],"svn_revision":"5022","platform_info":"x86_64-linux-5.14.0-60.fc35.x86_64","build_info":"(local build)","argv":["smartctl","--xall","--json=c","/dev/vda"],"messages":[{"string":"/dev/vda: Unable to detect device type","severity":"error"}],"exit_status":1}}`
+ }
+ 
+ func unknownToEmpty(value string) string {
 diff --git a/src/util/execute.go b/src/util/execute.go
 index 03ac92d..d13e156 100644
 --- a/src/util/execute.go
