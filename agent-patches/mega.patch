@@ -129,6 +129,35 @@ index 4535d27..574a2c6 100644
  }
  
  func unknownToEmpty(value string) string {
+diff --git a/src/ntp_synchronizer/main/main.go b/src/ntp_synchronizer/main/main.go
+index 3ca68f0..9433e27 100644
+--- a/src/ntp_synchronizer/main/main.go
++++ b/src/ntp_synchronizer/main/main.go
+@@ -6,18 +6,22 @@ import (
+ 	"os"
+ 
+ 	"github.com/openshift/assisted-installer-agent/src/config"
+-	"github.com/openshift/assisted-installer-agent/src/ntp_synchronizer"
++	// "github.com/openshift/assisted-installer-agent/src/ntp_synchronizer"
+ 	"github.com/openshift/assisted-installer-agent/src/util"
+ 	log "github.com/sirupsen/logrus"
+ )
+ 
++func swarm_ntp() (string, string, int) {
++    return "[]", "", 0
++}
++
+ func main() {
+ 	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
+ 	util.SetLogging("ntp_synchronizer", config.SubprocessConfig.TextLogging, config.SubprocessConfig.JournalLogging)
+ 	if flag.NArg() != 1 {
+ 		log.Fatalf("Expecting exactly single argument to ntp_synchronizer. Received %d", len(os.Args)-1)
+ 	}
+-	stdout, stderr, exitCode := ntp_synchronizer.Run(flag.Arg(0), &ntp_synchronizer.ProcessExecuter{}, log.StandardLogger())
++	stdout, stderr, exitCode := swarm_ntp()// ntp_synchronizer.Run(flag.Arg(0), &ntp_synchronizer.ProcessExecuter{}, log.StandardLogger())
+ 	fmt.Fprint(os.Stdout, stdout)
+ 	fmt.Fprint(os.Stderr, stderr)
+ 	os.Exit(exitCode)
 diff --git a/src/util/execute.go b/src/util/execute.go
 index 03ac92d..d13e156 100644
 --- a/src/util/execute.go
