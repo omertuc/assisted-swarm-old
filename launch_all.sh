@@ -21,6 +21,7 @@ sudo podman ps -q | xargs sudo podman kill || true
 sudo cp $SCRIPT_DIR/swarm-installer /usr/local/bin/swarm-installer
 sudo mkdir -p /opt/openshift/
 sudo touch /opt/openshift/.bootkube.done
+sudo touch /opt/openshift/master.ign
 
 export PULL_SECRET=$(curl -k -s "${SERVICE_ENDPOINT}/api/assisted-install/v2/infra-envs/${arbitrary_infraenv}/downloads/files?file_name=discovery.ign")
 export IGNITION=$(curl -k -s "${SERVICE_ENDPOINT}/api/assisted-install/v2/infra-envs/${arbitrary_infraenv}/downloads/files?file_name=discovery.ign")
