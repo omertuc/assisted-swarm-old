@@ -37,7 +37,7 @@ while read -r namespace; do
 
     while true; do 
         oc get agentclusterinstall/$namespace -n $namespace -ojson \
-        | jq '.spec.networking.machineNetwork = [{"cidr": "10.5.190.36/26"}]' \
+        | jq '.spec.networking.machineNetwork = [{"cidr": "10.5.190.32/26"}]' \
         | oc apply -f - && break
     done
 
