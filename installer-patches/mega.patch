@@ -12,6 +12,18 @@ index b4940cd..fb26666 100644
  ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
  NAMESPACE := $(or ${NAMESPACE},assisted-installer)
  GIT_REVISION := $(shell git rev-parse HEAD)
+diff --git a/go.mod b/go.mod
+index 34621e5..7f18d7b 100644
+--- a/go.mod
++++ b/go.mod
+@@ -47,6 +47,7 @@ replace (
+ 	k8s.io/api => k8s.io/api v0.19.2
+ 	k8s.io/apimachinery => k8s.io/apimachinery v0.19.2
+ 	k8s.io/client-go => k8s.io/client-go v0.19.2
++	github.com/irifrance/gini => github.com/go-air/gini v1.0.1
+ 	k8s.io/code-generator => k8s.io/code-generator v0.0.0-20200214080538-dc8f3adce97c
+ 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
+ 	sigs.k8s.io/cluster-api-provider-azure => github.com/openshift/cluster-api-provider-azure v0.1.0-alpha.3.0.20201016155852-4090a6970205
 diff --git a/src/installer/installer.go b/src/installer/installer.go
 index b555868..858c675 100644
 --- a/src/installer/installer.go
