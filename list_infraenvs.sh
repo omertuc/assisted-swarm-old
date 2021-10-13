@@ -7,20 +7,12 @@ SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 function infraenvs() {
     # Extract infra-env IDs from infraenv URLs
     oc get infraenv -A -ojson | jq '.items[] | select(.metadata.namespace | test("swarm-")) | .status.isoDownloadURL' -r \
-	    | grep --extended-regexp --only-matching --color=never '[[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12}' || true 
+	    | grep $@ --extended-regexp --only-matching --color=never '[[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12}'
 }
 
-function all_available() {
-    infraenvs
-    while read -r infra_env_id; do
-        if [[ $infra_env_id == "null" ]]; then
-            return 1
-        fi
-    done <<< $(infraenvs)
-}
-
-while ! all_available; do
-    echo "Not all infraenvs initialized"
+while infraenvs -v; do
+    echo "Not all infraenvs initialized:"
+    oc get infraenv -A -ojson | jq '.items[] | select(.metadata.namespace | test("swarm-")) | {"url": .status.isoDownloadURL, "name": .metadata.name}' -c | grep -v --extended-regexp '[[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12}' | jq -C
     sleep 1
 done
 
