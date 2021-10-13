@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -uo pipefail
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
@@ -11,6 +11,7 @@ function infraenvs() {
 }
 
 function all_available() {
+    infraenvs
     while read -r infra_env_id; do
         if [[ $infra_env_id == "null" ]]; then
             return 1
