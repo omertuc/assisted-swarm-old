@@ -34,7 +34,7 @@ if [[ "$IGNITION" == "" ]]; then
   exit 1
 fi
 
-export COPY_CMD=$(<<< $IGNITION jq '.systemd.units[].contents' -r | rg "podman run" | cut -d'=' -f2-)
+export COPY_CMD=$(<<< $IGNITION jq '.systemd.units[].contents' -r | grep "podman run" | cut -d'=' -f2-)
 sudo $COPY_CMD
 
 x=10
