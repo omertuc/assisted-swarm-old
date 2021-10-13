@@ -1,2 +1,3 @@
 jq
 uuid
+python3-pip
