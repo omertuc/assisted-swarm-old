@@ -76,7 +76,7 @@ The service-under-test can then be modified to use those custom images.
 
 You can then use the provided scripts under `manifests/` to deploy n-replicas
 of the assisted installation CRs. 
-`./launch_all.sh` will automatically discover all the infraenvs that were created,
+`utils/launch_all.sh` will automatically discover all the infraenvs that were created,
 and will launch n agents matching those infraenvs on the host where the script is ran.
 My current estimate for resource usage is - negligible amount of RAM per agent, but about
 250m cores per agent, which is a lot - you'd need about 256 cores to run 2000 agents concurrently
@@ -87,7 +87,7 @@ via the patches described in the "Patches" section below.
 
 ## 1. Build images
 From any machine (doesn't have to be the same machine running the swarm), run
-`QUAY_ACCOUNT=<your quay.io account> ./prepare_images.sh`
+`QUAY_ACCOUNT=<your quay.io account> dry-repos/prepare_images.sh`
 
 This will build the patched images and publish them to:
 
@@ -104,9 +104,9 @@ This part is up to you. Make sure the service is accessible from the swarm machi
 ### Service Configuration
 The assisted service configmap should be modified with the following parameters -
 1) `AUTH_TYPE` set to `none`
-2) `AGENT_DOCKER_IMAGE` set to point to the agent swarm image built by `./prepare_images.sh`
-2) `INSTALLER_IMAGE` set to point to the installer swarm image built by `./prepare_images.sh`
-3) `CONTROLLER_IMAGE` set to point to the controller swarm image built by `./prepare_images.sh`
+2) `AGENT_DOCKER_IMAGE` set to point to the agent swarm image built by `dry-repos/prepare_images.sh`
+2) `INSTALLER_IMAGE` set to point to the installer swarm image built by `dry-repos/prepare_images.sh`
+3) `CONTROLLER_IMAGE` set to point to the controller swarm image built by `dry-repos/prepare_images.sh`
 4) `HW_VALIDATOR_REQUIREMENTS` can optionally be modified if your main host has less RAM then is required by default
 
 ## 3. Create manifests
@@ -117,8 +117,8 @@ Test parameters such as pull-secret, SSH keys, and exact number of swarm replica
 in the `manifests/manifests-data.example.json` file. A default SSH key is provided and since we're
 not actually installing anything, there's no point in modifying it to your own SSH key.
 
-After configuration `manifests/manifests-data.example.json` you may run `./render.sh` to make sure
-everything is working as expected, then you can use `./apply.sh` and `./delete.sh` to create/delete
+After configuration `manifests/manifests-data.example.json` you may run `manifests/render.sh` to make sure
+everything is working as expected, then you can use `manifests/apply.sh` and `manifests/delete.sh` to create/delete
 the swarm CRs respectively.
 
 These scripts too can be ran from a machine that is not the swarm machine, as long as they both point
@@ -130,7 +130,7 @@ There are two modes to launch the agents -
 - `infraenv` - This mode launches the agents directly from infraenvs without messing around with BMHs
 - `bmh` - This mode simulates BMH state changes and downloads ISO images from the BMH image URL stanza
 
-The mode can be changed inside the `./launch_all.sh` script
+The mode can be changed inside the `utils/launch_all.sh` script
 
 To be continued
 

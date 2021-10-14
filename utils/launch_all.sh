@@ -10,7 +10,7 @@ MODE=infraenv
 echo Speaking to service at $SERVICE_ENDPOINT
 
 # Install utilities this machine might be missing
-sudo dnf install -y $(cat dnf.txt)
+sudo dnf install -y $(cat dnf-dependencies.txt)
 
 # Make sure the pull secret is configured for podman
 PULL_SECRET=$(oc get secret -n swarm-1 swarm-1 -ojson | jq '.data.".dockerconfigjson"' -r | base64 -d)
