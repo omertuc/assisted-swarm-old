@@ -145,7 +145,7 @@ we maintain in this repo, the easier it would be for the agent/installer to go o
 becoming broken as a result.
 
 ## Agent Patches
-See [Agent Patches documentation](agent-patches/doc.md)
+See [Agent Patches documentation](dry-repos/agent-patches/doc.md)
 
 ## Installer Patches
-See [Installer / Controller Patches documentation](installer-patches/doc.md)
+See [Installer / Controller Patches documentation](dry-repos/installer-patches/doc.md)
