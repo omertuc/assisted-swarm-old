@@ -45,6 +45,8 @@ jq '.storage.files[] | select(.path == "'$CA_CERT_PATH'").contents.source' -r <<
 export COPY_CMD=$(<<< $IGNITION jq '.systemd.units[].contents' -r | grep "podman run" | cut -d'=' -f2-)
 sudo $COPY_CMD
 
+. $SCRIPT_DIR/make-account.sh
+
 # Run agents, 10 at a time
 if [[ $MODE == "infraenv" ]]; then
     throttle=10
