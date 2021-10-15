@@ -48,6 +48,26 @@ index 164106c..425385d 100644
  			DiscoveryAgentVersion: config.GlobalAgentConfig.AgentVersion,
  		},
  	}
+diff --git a/src/config/agent_config.go b/src/config/agent_config.go
+index 668ec11..01be4e8 100644
+--- a/src/config/agent_config.go
++++ b/src/config/agent_config.go
+@@ -14,6 +14,7 @@ var GlobalAgentConfig struct {
+ 	ConnectivityConfig
+ 	IntervalSecs int
+ 	HostID       string
++	ForceMac     string
+ 	LoggingConfig
+ }
+ 
+@@ -33,6 +34,7 @@ func ProcessArgs() {
+ 	flag.StringVar(&ret.CACertificatePath, "cacert", "", "Path to custom CA certificate in PEM format")
+ 	flag.BoolVar(&ret.InsecureConnection, "insecure", false, "Do not validate TLS certificate")
+ 	flag.StringVar(&ret.HostID, "host-id", "", "Host identification")
++	flag.StringVar(&ret.ForceMac, "force-mac", "", "Force agent to report a particular mac address in its first network interface")
+ 	h := flag.Bool("help", false, "Help message")
+ 	flag.Parse()
+ 	if h != nil && *h {
 diff --git a/src/disk_speed_check/disk_speed_check.go b/src/disk_speed_check/disk_speed_check.go
 index 7ef32e3..94cdee0 100644
 --- a/src/disk_speed_check/disk_speed_check.go
@@ -129,6 +149,44 @@ index 4535d27..574a2c6 100644
  }
  
  func unknownToEmpty(value string) string {
+diff --git a/src/inventory/interfaces.go b/src/inventory/interfaces.go
+index c4b8c87..d4e528c 100644
+--- a/src/inventory/interfaces.go
++++ b/src/inventory/interfaces.go
+@@ -8,6 +8,7 @@ import (
+ 	"github.com/openshift/assisted-installer-agent/src/util"
+ 	"github.com/openshift/assisted-service/models"
+ 	"github.com/sirupsen/logrus"
++    "github.com/openshift/assisted-installer-agent/src/config"
+ )
+ 
+ const ipv6LocalLinkCIDR = "fe80::/10"
+@@ -88,15 +89,23 @@ func (i *interfaces) getInterfaces() []*models.Interface {
+ 		logrus.WithError(err).Warnf("Retrieving interfaces")
+ 		return ret
+ 	}
+-	for _, in := range ins {
++	for interface_index, in := range ins {
+ 		if !(in.IsPhysical() || in.IsBonding() || in.IsVlan()) {
+ 			continue
+ 		}
++
++        macAddress := in.HardwareAddr().String()
++		if interface_index == 0 {
++		    // If the user requested it, override the mac address of the first interface to the
++		    // mac address configured by the user
++            macAddress = config.GlobalAgentConfig.ForceMac
++        }
++
+ 		rec := models.Interface{
+ 			HasCarrier:    i.hasCarrier(in.Name()),
+ 			IPV4Addresses: make([]string, 0),
+ 			IPV6Addresses: make([]string, 0),
+-			MacAddress:    in.HardwareAddr().String(),
++			MacAddress:    macAddress,
+ 			Name:          in.Name(),
+ 			Mtu:           int64(in.MTU()),
+ 			Biosdevname:   i.getBiosDevname(in.Name()),
 diff --git a/src/ntp_synchronizer/main/main.go b/src/ntp_synchronizer/main/main.go
 index 3ca68f0..621b96e 100644
 --- a/src/ntp_synchronizer/main/main.go
@@ -159,7 +217,7 @@ index 3ca68f0..621b96e 100644
  	fmt.Fprint(os.Stderr, stderr)
  	os.Exit(exitCode)
 diff --git a/src/util/execute.go b/src/util/execute.go
-index 03ac92d..d13e156 100644
+index 03ac92d..671b3f3 100644
 --- a/src/util/execute.go
 +++ b/src/util/execute.go
 @@ -9,6 +9,7 @@ import (
@@ -170,7 +228,7 @@ index 03ac92d..d13e156 100644
  )
  
  const TimeoutExitCode = 124
-@@ -35,12 +36,84 @@ func getErrorStr(err error, stderr *bytes2.Buffer) string {
+@@ -35,12 +36,91 @@ func getErrorStr(err error, stderr *bytes2.Buffer) string {
  	return ""
  }
  
@@ -243,6 +301,13 @@ index 03ac92d..d13e156 100644
 +        }
 +    }
 +
++    // Force mac address in the inventory command
++    for i := 0; i < len(args); i++ {
++        if strings.HasSuffix(args[i], "inventory") {
++            args[i] = fmt.Sprintf("%s --force-mac=%s", args[i], config.GlobalAgentConfig.ForceMac)
++        }
++    }
++
  	cmd := exec.Command(command, args...)
  	var stdoutBytes, stderrBytes bytes2.Buffer
  	cmd.Stdout = &stdoutBytes
@@ -256,7 +321,7 @@ index 03ac92d..d13e156 100644
  	return stdoutBytes.String(), getErrorStr(err, &stderrBytes), getExitCode(err)
  }
  
-@@ -90,7 +163,7 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
+@@ -90,7 +170,7 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
  
  func ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int) {
  	commandBase := "nsenter"
