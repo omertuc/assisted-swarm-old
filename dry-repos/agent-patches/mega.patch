@@ -22,6 +22,27 @@ index 18306f7..c9237fa 100644
  
  push: build-image subsystem
  	docker push $(ASSISTED_INSTALLER_AGENT)
+diff --git a/src/agent/main/main.go b/src/agent/main/main.go
+index 9e4dce5..8a142c6 100644
+--- a/src/agent/main/main.go
++++ b/src/agent/main/main.go
+@@ -2,6 +2,7 @@ package main
+ 
+ import (
+ 	"time"
++	"fmt"
+ 
+ 	"github.com/openshift/assisted-installer-agent/src/commands"
+ 	"github.com/openshift/assisted-installer-agent/src/config"
+@@ -23,6 +24,8 @@ func main() {
+ 			continue
+ 		}
+ 
++		stepRunnerCommand.Args = append(stepRunnerCommand.Args, fmt.Sprintf("--force-mac=%s", config.GlobalAgentConfig.ForceMac))
++
+ 		if err := commands.StartStepRunner(stepRunnerCommand.Command, stepRunnerCommand.Args...); err != nil {
+ 
+ 			var reRegistrerDelay time.Duration
 diff --git a/src/commands/service_api.go b/src/commands/service_api.go
 index 164106c..425385d 100644
 --- a/src/commands/service_api.go
