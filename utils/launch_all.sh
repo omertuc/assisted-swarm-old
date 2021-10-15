@@ -40,7 +40,8 @@ CA_CERT_PATH="/etc/assisted-service/service-ca-cert.crt"
 sudo mkdir -p $(dirname ${CA_CERT_PATH})
 jq '.storage.files[] | select(.path == "'$CA_CERT_PATH'").contents.source' -r <<< $IGNITION | cut -d',' -f2- | base64 -d | sudo tee $CA_CERT_PATH > /dev/null
 
-# Extract the agent binary copy command from the ignition file, and run it to place the agent binary on this host
+# Extract the agent binary copy command from the ignition file, and run it to
+# place the agent binary on this host
 export COPY_CMD=$(<<< $IGNITION jq '.systemd.units[].contents' -r | grep "podman run" | cut -d'=' -f2-)
 sudo $COPY_CMD
 

@@ -8,6 +8,8 @@ set -euxo pipefail
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
+WANTED_STATE=${WANTED_STATE:-ready}
+
 # Get the current CR, set its status
 WITH_STATUS=$(oc get -n $NAMESPACE baremetalhost $BMH -ojson | jq '.status = 
     {
@@ -18,7 +20,7 @@ WITH_STATUS=$(oc get -n $NAMESPACE baremetalhost $BMH -ojson | jq '.status =
       "operationalStatus": "discovered",
       "poweredOn": true,
       "provisioning": {
-        "state": "ready",
+        "state": "'$WANTED_STATE'",
         "ID": "",
         "image": {
           "url": ""
