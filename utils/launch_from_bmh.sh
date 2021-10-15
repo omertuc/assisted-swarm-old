@@ -19,7 +19,7 @@ function get_uuid() {
 
 while true; do
     image_url=$(oc get baremetalhost -n ${NAMESPACE} ${BMH} -ojson  | jq '.spec.image.url' -r)
-    get_uuid <<< $image_url || break;
+    get_uuid <<< $image_url && break;
     echo "Waiting for ${BMH} BMH to have an image URL"
     sleep 5
 done
