@@ -4,8 +4,6 @@ set -euxo pipefail
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
-MODE=infraenv
-
 # Service endpoint should look something like http://192.168.39.239:30478/
 echo Speaking to service at $SERVICE_ENDPOINT
 
