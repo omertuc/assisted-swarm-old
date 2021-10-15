@@ -171,34 +171,36 @@ index 4535d27..574a2c6 100644
  
  func unknownToEmpty(value string) string {
 diff --git a/src/inventory/interfaces.go b/src/inventory/interfaces.go
-index c4b8c87..d4e528c 100644
+index c4b8c87..a4c833a 100644
 --- a/src/inventory/interfaces.go
 +++ b/src/inventory/interfaces.go
-@@ -8,6 +8,7 @@ import (
- 	"github.com/openshift/assisted-installer-agent/src/util"
- 	"github.com/openshift/assisted-service/models"
- 	"github.com/sirupsen/logrus"
-+    "github.com/openshift/assisted-installer-agent/src/config"
- )
+@@ -81,22 +81,33 @@ func getFlags(flags net.Flags) []string {
+ 	}
+ }
  
- const ipv6LocalLinkCIDR = "fe80::/10"
-@@ -88,15 +89,23 @@ func (i *interfaces) getInterfaces() []*models.Interface {
+-func (i *interfaces) getInterfaces() []*models.Interface {
++func (i *interfaces) getInterfaces(forceMac string) []*models.Interface {
+ 	ret := make([]*models.Interface, 0)
+ 	ins, err := i.dependencies.Interfaces()
+ 	if err != nil {
  		logrus.WithError(err).Warnf("Retrieving interfaces")
  		return ret
  	}
--	for _, in := range ins {
-+	for interface_index, in := range ins {
++
++    interfacesFound := 0
+ 	for _, in := range ins {
  		if !(in.IsPhysical() || in.IsBonding() || in.IsVlan()) {
  			continue
  		}
 +
 +        macAddress := in.HardwareAddr().String()
-+		if interface_index == 0 {
++		if interfacesFound == 0 && forceMac != "" {
 +		    // If the user requested it, override the mac address of the first interface to the
 +		    // mac address configured by the user
-+            macAddress = config.GlobalAgentConfig.ForceMac
++            macAddress = forceMac
 +        }
 +
++        interfacesFound += 1
  		rec := models.Interface{
  			HasCarrier:    i.hasCarrier(in.Name()),
  			IPV4Addresses: make([]string, 0),
@@ -208,6 +210,87 @@ index c4b8c87..d4e528c 100644
  			Name:          in.Name(),
  			Mtu:           int64(in.MTU()),
  			Biosdevname:   i.getBiosDevname(in.Name()),
+@@ -128,8 +139,8 @@ func (i *interfaces) getInterfaces() []*models.Interface {
+ 	return ret
+ }
+ 
+-func GetInterfaces(dependencies util.IDependencies) []*models.Interface {
+-	return newInterfaces(dependencies).getInterfaces()
++func GetInterfaces(dependencies util.IDependencies, forceMac string) []*models.Interface {
++	return newInterfaces(dependencies).getInterfaces(forceMac)
+ }
+ 
+ func setV6PrefixesForAddresses(interfaces []*models.Interface, dependencies util.IDependencies) {
+diff --git a/src/inventory/inventory.go b/src/inventory/inventory.go
+index b12d8d7..7c8cd35 100644
+--- a/src/inventory/inventory.go
++++ b/src/inventory/inventory.go
+@@ -8,7 +8,7 @@ import (
+ 	"github.com/openshift/assisted-service/models"
+ )
+ 
+-func ReadInventory() *models.Inventory {
++func ReadInventory(forceMac string) *models.Inventory {
+ 	d := util.NewDependencies()
+ 	ret := models.Inventory{
+ 		BmcAddress:   GetBmcAddress(d),
+@@ -18,7 +18,7 @@ func ReadInventory() *models.Inventory {
+ 		Disks:        GetDisks(d),
+ 		Gpus:         GetGPUs(d),
+ 		Hostname:     GetHostname(d),
+-		Interfaces:   GetInterfaces(d),
++		Interfaces:   GetInterfaces(d, forceMac),
+ 		Memory:       GetMemory(d),
+ 		SystemVendor: GetVendor(d),
+ 		Timestamp:    time.Now().Unix(),
+@@ -28,8 +28,8 @@ func ReadInventory() *models.Inventory {
+ 	return &ret
+ }
+ 
+-func CreateInventoryInfo() []byte {
+-	in := ReadInventory()
++func CreateInventoryInfo(forceMac string) []byte {
++	in := ReadInventory(forceMac)
+ 	b, _ := json.Marshal(&in)
+ 	return b
+ }
+diff --git a/src/inventory/main/main.go b/src/inventory/main/main.go
+index 1a49789..8ff3dab 100644
+--- a/src/inventory/main/main.go
++++ b/src/inventory/main/main.go
+@@ -1,6 +1,7 @@
+ package main
+ 
+ import (
++	"flag"
+ 	"fmt"
+ 
+ 	"github.com/openshift/assisted-installer-agent/src/config"
+@@ -8,8 +9,23 @@ import (
+ 	"github.com/openshift/assisted-installer-agent/src/util"
+ )
+ 
++type Config struct {
++	ForceMac string
++}
++
++var executableConfig Config
++
++func processArgs() {
++	ret := &executableConfig
++	flag.StringVar(&ret.ForceMac, "force-mac", "", "Force agent to report a particular mac address in its first network interface")
++	flag.Parse()
++}
++
+ func main() {
++	processArgs()
+ 	config.ProcessSubprocessArgs(config.DefaultLoggingConfig)
++
+ 	util.SetLogging("inventory", config.SubprocessConfig.TextLogging, config.SubprocessConfig.JournalLogging)
+-	fmt.Print(string(inventory.CreateInventoryInfo()))
++
++	fmt.Print(string(inventory.CreateInventoryInfo(executableConfig.ForceMac)))
+ }
 diff --git a/src/ntp_synchronizer/main/main.go b/src/ntp_synchronizer/main/main.go
 index 3ca68f0..621b96e 100644
 --- a/src/ntp_synchronizer/main/main.go
