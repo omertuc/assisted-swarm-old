@@ -28,7 +28,7 @@ done
 curl -s -k $(oc get baremetalhost $BMH -n $NAMESPACE -ojson | jq .spec.image.url -r) -o /dev/null
 
 # Pretend the BMH is now provisioned
-WANTED_STATE=provisioned ${SCRIPT_DIR}/set_bmh_status.sh
+WANTED_STATE=provisioned NAMESPACE=${NAMESPACE} ${SCRIPT_DIR}/set_bmh_status.sh
 
 # Run fake agent
 INFRA_ENV_ID=$(get_uuid <<< $image_url) 
