@@ -22,12 +22,14 @@ sudo killall agent || true
 sudo podman ps -q | xargs sudo podman kill || true
 
 # Fetch the ignition file of some arbitrary infraenv
+set +e
 arbitrary_infraenv=$(./list_infraenvs.sh | head -1)
 export IGNITION=$(curl -k -s "${SERVICE_ENDPOINT}/api/assisted-install/v2/infra-envs/${arbitrary_infraenv}/downloads/files?file_name=discovery.ign")
 if [[ "$IGNITION" == "" ]]; then
   echo "Failed to fetch ignition file"
   exit 1
 fi
+set -e
 
 # Create some files the agent expects to exist
 sudo cp $SCRIPT_DIR/swarm-installer /usr/local/bin/swarm-installer
