@@ -48,7 +48,7 @@ export COPY_CMD=$(<<< $IGNITION jq '.systemd.units[].contents' -r | grep "podman
 sudo $COPY_CMD
 
 # Run agents, 10 at a time
-if [[ $mode == "infraenv" ]]; then
+if [[ $MODE == "infraenv" ]]; then
     throttle=10
     for infra_env in $(./list_infraenvs.sh); do 
         INFRA_ENV_ID=${infra_env} ./launch_from_infraenv.sh &
@@ -59,7 +59,7 @@ if [[ $mode == "infraenv" ]]; then
             throttle=10
         fi
     done
-elif [[ $mode == "bmh" ]]; then
+elif [[ $MODE == "bmh" ]]; then
     throttle=10
     for bmh in $(./list_bmhs.sh); do 
         BMH=${bmh} ./launch_from_bmh.sh &
@@ -71,6 +71,6 @@ elif [[ $mode == "bmh" ]]; then
         fi
     done
 else
-    echo "Unsupported mode $mode"
+    echo "Unsupported mode MODE=$MODE"
     exit 1
 fi
