@@ -22,7 +22,7 @@ sudo killall agent || true
 sudo podman ps -q | xargs sudo podman kill || true
 
 # Fetch the ignition file of some arbitrary infraenv
-arbitrary_bmh=$(./list_infraenvs.sh | head -1)
+arbitrary_infraenv=$(./list_infraenvs.sh | head -1)
 export IGNITION=$(curl -k -s "${SERVICE_ENDPOINT}/api/assisted-install/v2/infra-envs/${arbitrary_infraenv}/downloads/files?file_name=discovery.ign")
 if [[ "$IGNITION" == "" ]]; then
   echo "Failed to fetch ignition file"
