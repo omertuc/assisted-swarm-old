@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 set -euxo pipefail
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
@@ -30,10 +31,13 @@ curl -s -k $(oc get baremetalhost $BMH -n $NAMESPACE -ojson | jq .spec.image.url
 # Pretend the BMH is now provisioned
 WANTED_STATE=provisioned NAMESPACE=${NAMESPACE} ${SCRIPT_DIR}/set_bmh_status.sh
 
+BMH_MAC=$(oc get baremetalhost -n ${NAMESPACE} ${BMH} -ojson  | jq '.spec.bootMACAddress' -r)
+
 # Run fake agent
 INFRA_ENV_ID=$(get_uuid <<< $image_url) 
 export IGNITION=$(curl -k -s "${SERVICE_ENDPOINT}/api/assisted-install/v2/infra-envs/${INFRA_ENV_ID}/downloads/files?file_name=discovery.ign")
 export AGENT_CMD=$(<<< $IGNITION jq '.systemd.units[].contents' -r | grep 'ExecStart=/usr/local/bin/agent' | cut -d'=' -f2-)
 echo $IGNITION
 echo $AGENT_CMD
-sudo $(echo $AGENT_CMD | sed -e "s/--infra-env-id/--host-id $(uuid) --infra-env-id/")
+
+sudo $(echo $AGENT_CMD | sed -e "s/--infra-env-id/--force-mac ${BMH_MAC} --host-id $(uuid) --infra-env-id/")
