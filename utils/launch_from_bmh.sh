@@ -5,7 +5,7 @@ set -euxo pipefail
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
 # For now assume that the name of the namespace is the same name as the BMH
-NAMESPACE=${BMH}
+export NAMESPACE=${BMH}
 
 echo Running for BMH $BMH
 
