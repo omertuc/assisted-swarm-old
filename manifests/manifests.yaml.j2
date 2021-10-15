@@ -25,6 +25,8 @@ spec:
     clusterNetwork:
     - cidr: 10.128.0.0/14
       hostPrefix: 23
+    machineNetwork:
+    - cidr: {{ machine_network }}
     serviceNetwork:
     - 172.30.0.0/16
   provisionRequirements:
@@ -65,6 +67,9 @@ metadata:
   name: swarm-{{ i }}
   namespace: swarm-{{ i }}
 spec:
+  clusterDeploymentName:
+    name: swarm-{{ i }}
+    namespace: swarm-{{ i }}
   pullSecretRef:
     name: swarm-{{ i }}-pull
     sshAuthorizedKey: {{ ssh_pub_key }}

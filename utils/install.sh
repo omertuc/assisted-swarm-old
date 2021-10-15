@@ -13,17 +13,17 @@ while read -r namespace; do
     echo Preparing $namespace for installation
     agent_name=$(oc get agent -n $namespace -ojson | jq '.items[].metadata.name' -r)
 
-    oc patch agent/$agent_name -n $namespace --type='json' --patch '[{
-            "op": "add",
-            "path": "/spec/approved",
-            "value": true
-        }]'
+    # oc patch agent/$agent_name -n $namespace --type='json' --patch '[{
+    #         "op": "add",
+    #         "path": "/spec/approved",
+    #         "value": true
+    #     }]'
 
-    oc patch agent/$agent_name -n $namespace --type='json' --patch '[{
-            "op": "add",
-            "path": "/spec/role",
-            "value": master
-        }]'
+    # oc patch agent/$agent_name -n $namespace --type='json' --patch '[{
+    #         "op": "add",
+    #         "path": "/spec/role",
+    #         "value": master
+    #     }]'
 
     oc patch agent/$agent_name -n $namespace --type='json' --patch '[{
             "op": "add",
@@ -37,7 +37,7 @@ while read -r namespace; do
 
     while true; do 
         oc get agentclusterinstall/$namespace -n $namespace -ojson \
-        | jq '.spec.networking.machineNetwork = [{"cidr": "192.168.39.0/24"}]' \
+        | jq '.spec.networking.machineNetwork = [{"cidr": "10.5.190.0/26"}]' \
         | oc apply -f - && break
     done
 
