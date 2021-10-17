@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Create an admin service account so we can use its token to make API calls
-oc delete serviceaccount swarm
-oc delete clusterrolebinding swarm
+oc delete serviceaccount swarm || true
+oc delete clusterrolebinding swarm || true
 oc create serviceaccount swarm -n default || true
 oc create clusterrolebinding swarm \
     --clusterrole=cluster-admin \
