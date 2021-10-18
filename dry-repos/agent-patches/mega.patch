@@ -321,7 +321,7 @@ index 3ca68f0..621b96e 100644
  	fmt.Fprint(os.Stderr, stderr)
  	os.Exit(exitCode)
 diff --git a/src/util/execute.go b/src/util/execute.go
-index 03ac92d..671b3f3 100644
+index 03ac92d..9418138 100644
 --- a/src/util/execute.go
 +++ b/src/util/execute.go
 @@ -9,6 +9,7 @@ import (
@@ -332,72 +332,10 @@ index 03ac92d..671b3f3 100644
  )
  
  const TimeoutExitCode = 124
-@@ -35,12 +36,91 @@ func getErrorStr(err error, stderr *bytes2.Buffer) string {
- 	return ""
+@@ -36,11 +37,29 @@ func getErrorStr(err error, stderr *bytes2.Buffer) string {
  }
  
-+func appendHostIDToContainerName(containerName string, hostID string, args ...string) []string {
-+    // We have to handle many different cases of how --name appears in the command
-+
-+    // Handle podman args as separate args
-+    for i := 0; i < len(args) - 1; i++ {
-+        if args[i] == "--name" && args[i + 1] == containerName {
-+            args[i + 1] = fmt.Sprintf("%s-%s", containerName, hostID)
-+            return args
-+        }
-+    }
-+
-+    // Handle podman args as separate args but with the --name=%s in a single arg
-+    for i := 0; i < len(args); i++ {
-+        if args[i] == fmt.Sprintf("--name=%s", containerName) {
-+            args[i] = fmt.Sprintf("--name=%s-%s", containerName, hostID)
-+            return args
-+        }
-+    }
-+
-+    // Handle all args in a single string ("bash", "-c", "podman run ...") with --name=%s
-+    for i := 0; i < len(args); i++ {
-+        if strings.Contains(args[i], fmt.Sprintf("--name=%s", containerName)) {
-+            args[i] = strings.Replace(
-+                args[i],
-+                fmt.Sprintf("--name=%s", containerName),
-+                fmt.Sprintf("--name=%s-%s", containerName, hostID),
-+                1,
-+            )
-+            return args
-+        }
-+    }
-+
-+    // Handle all args in a single string ("bash", "-c", "podman run ...") with --name %s
-+    for i := 0; i < len(args); i++ {
-+        if strings.Contains(args[i], fmt.Sprintf("--name %s", containerName)) {
-+            args[i] = strings.Replace(
-+                args[i],
-+                fmt.Sprintf("--name %s", containerName),
-+                fmt.Sprintf("--name %s-%s", containerName, hostID),
-+                1,
-+            )
-+            return args
-+        }
-+    }
-+
-+    return args
-+}
-+
  func Execute(command string, args ...string) (stdout string, stderr string, exitCode int) {
-+    stepsThatHaveContainerName := []string{
-+        "next-step-runner",
-+        "disk_performance",
-+        "logs-sender",
-+        "assisted-installer",
-+        "container_image_availability",
-+        "free_addresses_scanner",
-+    }
-+
-+    for _, step := range stepsThatHaveContainerName {
-+        args = appendHostIDToContainerName(step, config.GlobalAgentConfig.HostID, args...)
-+    }
-+
 +    // Avoid destroying disks
 +    for i := 0; i < len(args); i++ {
 +        if strings.Contains(args[i], "dd if=") {
@@ -425,7 +363,7 @@ index 03ac92d..671b3f3 100644
  	return stdoutBytes.String(), getErrorStr(err, &stderrBytes), getExitCode(err)
  }
  
-@@ -90,7 +170,7 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
+@@ -90,7 +109,7 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
  
  func ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int) {
  	commandBase := "nsenter"

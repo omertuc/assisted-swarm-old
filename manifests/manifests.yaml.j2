@@ -67,7 +67,7 @@ metadata:
   name: swarm-{{ i }}
   namespace: swarm-{{ i }}
 spec:
-  clusterDeploymentName:
+  clusterRef:
     name: swarm-{{ i }}
     namespace: swarm-{{ i }}
   pullSecretRef:
