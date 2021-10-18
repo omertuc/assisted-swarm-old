@@ -35,11 +35,11 @@ while read -r namespace; do
         }]
     '
 
-    while true; do 
-        oc get agentclusterinstall/$namespace -n $namespace -ojson \
-        | jq '.spec.networking.machineNetwork = [{"cidr": "10.5.190.0/26"}]' \
-        | oc apply -f - && break
-    done
+    # while true; do 
+    #     oc get agentclusterinstall/$namespace -n $namespace -ojson \
+    #     | jq '.spec.networking.machineNetwork = [{"cidr": "10.5.190.0/26"}]' \
+    #     | oc apply -f - && break
+    # done
 
 done <<< $all_swarm_namespaces
 
