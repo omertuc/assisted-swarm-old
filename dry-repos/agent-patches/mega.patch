@@ -23,7 +23,7 @@ index 18306f7..c9237fa 100644
  push: build-image subsystem
  	docker push $(ASSISTED_INSTALLER_AGENT)
 diff --git a/src/agent/main/main.go b/src/agent/main/main.go
-index 9e4dce5..8a142c6 100644
+index 9e4dce5..edc5189 100644
 --- a/src/agent/main/main.go
 +++ b/src/agent/main/main.go
 @@ -2,6 +2,7 @@ package main
@@ -34,10 +34,23 @@ index 9e4dce5..8a142c6 100644
  
  	"github.com/openshift/assisted-installer-agent/src/commands"
  	"github.com/openshift/assisted-installer-agent/src/config"
-@@ -23,6 +24,8 @@ func main() {
+@@ -23,6 +24,21 @@ func main() {
  			continue
  		}
  
++        firstEnvArgIndex := -1
++        for i, arg := range(stepRunnerCommand.Args) {
++            if arg == "--env" {
++                firstEnvArgIndex = i
++            }
++        }
++
++        stepRunnerCommand.Args = append(
++            stepRunnerCommand.Args[:firstEnvArgIndex],
++            append([]string{fmt.Sprintf("--env=CONTAINERS_STORAGE_CONF=%s", config.GlobalAgentConfig.ContainerStorage)},
++            stepRunnerCommand.Args[firstEnvArgIndex:]...)...
++        )
++
 +		stepRunnerCommand.Args = append(stepRunnerCommand.Args, fmt.Sprintf("--force-mac=%s", config.GlobalAgentConfig.ForceMac))
 +
  		if err := commands.StartStepRunner(stepRunnerCommand.Command, stepRunnerCommand.Args...); err != nil {
@@ -70,22 +83,28 @@ index 164106c..425385d 100644
  		},
  	}
 diff --git a/src/config/agent_config.go b/src/config/agent_config.go
-index 668ec11..01be4e8 100644
+index 668ec11..60ae744 100644
 --- a/src/config/agent_config.go
 +++ b/src/config/agent_config.go
-@@ -14,6 +14,7 @@ var GlobalAgentConfig struct {
+@@ -12,8 +12,10 @@ const agentVersionTagDelimiter = ":"
+ 
+ var GlobalAgentConfig struct {
  	ConnectivityConfig
- 	IntervalSecs int
- 	HostID       string
-+	ForceMac     string
+-	IntervalSecs int
+-	HostID       string
++	IntervalSecs     int
++	HostID           string
++	ForceMac         string
++	ContainerStorage string
  	LoggingConfig
  }
  
-@@ -33,6 +34,7 @@ func ProcessArgs() {
+@@ -33,6 +35,8 @@ func ProcessArgs() {
  	flag.StringVar(&ret.CACertificatePath, "cacert", "", "Path to custom CA certificate in PEM format")
  	flag.BoolVar(&ret.InsecureConnection, "insecure", false, "Do not validate TLS certificate")
  	flag.StringVar(&ret.HostID, "host-id", "", "Host identification")
 +	flag.StringVar(&ret.ForceMac, "force-mac", "", "Force agent to report a particular mac address in its first network interface")
++	flag.StringVar(&ret.ContainerStorage, "container-storage", "", "Container storage configuration file to tell next step runner to use")
  	h := flag.Bool("help", false, "Help message")
  	flag.Parse()
  	if h != nil && *h {

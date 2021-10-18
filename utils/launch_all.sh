@@ -60,7 +60,7 @@ if [[ $MODE == "infraenv" ]]; then
         fi
     done
 elif [[ $MODE == "bmh" ]]; then
-    # $SCRIPT_DIR/ready_all_bmh.sh
+    $SCRIPT_DIR/ready_all_bmh.sh
 
     throttle=10
     for bmh in $(./list_bmhs.sh); do 
