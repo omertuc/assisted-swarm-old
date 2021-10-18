@@ -17,6 +17,7 @@ sudo tee /root/.docker/config.json >/dev/null <<< $PULL_SECRET
 
 # Kill previously running agents / step containers / next_step_runners
 sudo killall agent || true
+sudo killall next_step_runner || true
 sudo podman ps -q | xargs sudo podman kill || true
 
 # Fetch the ignition file of some arbitrary infraenv
