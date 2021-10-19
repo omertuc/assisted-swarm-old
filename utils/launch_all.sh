@@ -49,31 +49,21 @@ sudo $COPY_CMD
 . $SCRIPT_DIR/make-account.sh
 
 # Run agents, 10 at a time
-if [[ $MODE == "infraenv" ]]; then
-    throttle=10
-    for infra_env in $(./list_infraenvs.sh); do 
-        INFRA_ENV_ID=${infra_env} ./launch_from_infraenv.sh &
-        throttle=$((throttle - 1))
-        echo $throttle
-        if [[ $throttle == "0" ]]; then
-            sleep 10;
-            throttle=10
-        fi
-    done
-elif [[ $MODE == "bmh" ]]; then
-    $SCRIPT_DIR/ready_all_bmh.sh
+$SCRIPT_DIR/ready_all_bmh.sh
 
-    throttle=10
-    for bmh in $(./list_bmhs.sh); do 
-        BMH=${bmh} ./launch_from_bmh.sh &
-        throttle=$((throttle - 1))
-        echo $throttle
-        if [[ $throttle == "0" ]]; then
-            sleep 10;
-            throttle=10
-        fi
-    done
-else
-    echo "Unsupported mode MODE=$MODE"
-    exit 1
-fi
+# Create tmpfs
+export STORAGE_DIR=~/.swarm/storage
+mkdir -p $STORAGE_DIR
+sudo umount $STORAGE_DIR
+sudo mount -t tmpfs -o size=64000m tmpfs $STORAGE_DIR
+
+throttle=10
+for bmh in $(./list_bmhs.sh); do 
+    BMH=${bmh} ./launch_from_bmh.sh &
+    throttle=$((throttle - 1))
+    echo $throttle
+    if [[ $throttle == "0" ]]; then
+        sleep 10;
+        throttle=10
+    fi
+done

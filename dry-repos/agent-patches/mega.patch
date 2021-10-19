@@ -23,7 +23,7 @@ index 18306f7..c9237fa 100644
  push: build-image subsystem
  	docker push $(ASSISTED_INSTALLER_AGENT)
 diff --git a/src/agent/main/main.go b/src/agent/main/main.go
-index 9e4dce5..edc5189 100644
+index 9e4dce5..a4bf251 100644
 --- a/src/agent/main/main.go
 +++ b/src/agent/main/main.go
 @@ -2,6 +2,7 @@ package main
@@ -34,6 +34,15 @@ index 9e4dce5..edc5189 100644
  
  	"github.com/openshift/assisted-installer-agent/src/commands"
  	"github.com/openshift/assisted-installer-agent/src/config"
+@@ -9,7 +10,7 @@ import (
+ 	log "github.com/sirupsen/logrus"
+ )
+ 
+-const defaultRetryDelay = 1 * time.Hour
++const defaultRetryDelay = 1 * time.Minute
+ 
+ func main() {
+ 	config.ProcessArgs()
 @@ -23,6 +24,21 @@ func main() {
  			continue
  		}
@@ -173,6 +182,95 @@ index 7ef32e3..94cdee0 100644
  }
  
  func createResponse(ioSyncDuration int64, path string) string {
+diff --git a/src/inventory/bmc.go b/src/inventory/bmc.go
+index dafaf1d..b9db2c6 100644
+--- a/src/inventory/bmc.go
++++ b/src/inventory/bmc.go
+@@ -1,7 +1,7 @@
+ package inventory
+ 
+ import (
+-	"net"
++	// "net"
+ 	"regexp"
+ 	"strconv"
+ 	"strings"
+@@ -40,19 +40,19 @@ func (b *bmc) getIsEnabled(value interface{}) bool {
+ }
+ 
+ func (b *bmc) getBmcAddress() string {
+-	for ch := 1; ch <= MaxIpmiChannel; ch++ {
+-		ret := b.getIpForChannnel(ch)
+-		if ret == "" {
+-			continue
+-		}
+-		ip := net.ParseIP(ret)
+-		if ip == nil {
+-			continue
+-		}
+-		if ret != "0.0.0.0" {
+-			return ret
+-		}
+-	}
++	// for ch := 1; ch <= MaxIpmiChannel; ch++ {
++	// 	ret := b.getIpForChannnel(ch)
++	// 	if ret == "" {
++	// 		continue
++	// 	}
++	// 	ip := net.ParseIP(ret)
++	// 	if ip == nil {
++	// 		continue
++	// 	}
++	// 	if ret != "0.0.0.0" {
++	// 		return ret
++	// 	}
++	// }
+ 	return "0.0.0.0"
+ }
+ 
+@@ -120,24 +120,24 @@ func (b *bmc) getAddrMode(ch int) string {
+ }
+ 
+ func (b *bmc) getBmcV6Address() string {
+-	for ch := 1; ch <= MaxIpmiChannel; ch++ {
+-		addrMode := b.getAddrMode(ch)
+-		if addrMode == "" {
+-			continue
+-		}
+-		address := b.getV6Address(ch, "dynamic")
+-		if address == "" {
+-			address = b.getV6Address(ch, "static")
+-		}
+-		if address == "" {
+-			continue
+-		}
+-		ip, _, err := net.ParseCIDR(address)
+-		if err != nil {
+-			continue
+-		}
+-		return ip.String()
+-	}
++	// for ch := 1; ch <= MaxIpmiChannel; ch++ {
++	// 	addrMode := b.getAddrMode(ch)
++	// 	if addrMode == "" {
++	// 		continue
++	// 	}
++	// 	address := b.getV6Address(ch, "dynamic")
++	// 	if address == "" {
++	// 		address = b.getV6Address(ch, "static")
++	// 	}
++	// 	if address == "" {
++	// 		continue
++	// 	}
++	// 	ip, _, err := net.ParseCIDR(address)
++	// 	if err != nil {
++	// 		continue
++	// 	}
++	// 	return ip.String()
++	// }
+ 	return "::/0"
+ }
+ 
 diff --git a/src/inventory/disks.go b/src/inventory/disks.go
 index 4535d27..574a2c6 100644
 --- a/src/inventory/disks.go

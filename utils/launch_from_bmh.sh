@@ -40,8 +40,8 @@ export AGENT_CMD=$(<<< $IGNITION jq '.systemd.units[].contents' -r | grep 'ExecS
 echo $IGNITION
 echo $AGENT_CMD
 
-container_storage=$(mktemp --dry-run)
-container_storage_config=$(mktemp --dry-run)
+container_storage=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
+container_storage_config=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
 sudo mkdir -p $container_storage
 < /etc/containers/storage.conf sed -e '/graphroot =/s@/var/lib/containers/storage@'${container_storage}'@' > ${container_storage_config}
 sudo CONTAINERS_STORAGE_CONF=${container_storage_config} $(echo $AGENT_CMD | sed -e "s@--infra-env-id@--container-storage ${container_storage_config} --force-mac ${BMH_MAC} --host-id $(uuid) --infra-env-id@")
