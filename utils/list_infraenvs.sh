@@ -12,7 +12,7 @@ function infraenvs() {
 
 while infraenvs -v; do
     echo "Not all infraenvs initialized:" > /dev/stderr
-    oc get infraenv -A -ojson | jq '.items[] | select(.metadata.namespace | test("swarm-")) | {"url": .status.isoDownloadURL, "name": .metadata.name}' -c | grep -v --extended-regexp '[[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12}' | jq -C > /dev/stderr
+    oc get infraenv -A -ojson | jq '.items[] | select(.metadata.namespace | test("swarm-")) | {"url": .status.isoDownloadURL, "name": .metadata.name}' -c | grep -v --extended-regexp '[[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12}' | jq '.name + " still missing ISO URL"' -r -C -c | sort -V > /dev/stderr
     sleep 1
 done
 

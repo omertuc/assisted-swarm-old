@@ -10,7 +10,7 @@ oc get namespace -A -oname | cut -d'/' -f2 | grep swarm | while read -r NAMESPAC
     oc get baremetalhost -o name -n $NAMESPACE | cut -d'/' -f2 | while read -r BMH; do
         export NAMESPACE
         export BMH
-        ./set_bmh_status.sh
+        ./set_bmh_status.sh &
     done 
 done 
 

@@ -12,7 +12,7 @@ function check_bmh() {
 
 while check_bmh; do
     echo "Not all baremetalhosts have URL:" > /dev/stderr
-    oc get baremetalhost -A -ojson | jq '.items[] | select(.metadata.namespace | test("swarm-")) | {"url": .spec.image.url, "name": .metadata.name}' -c | grep -v --extended-regexp '[[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12}' | jq -C > /dev/stderr
+    oc get baremetalhost -A -ojson | jq '.items[] | select(.metadata.namespace | test("swarm-")) | {"url": .spec.image.url, "name": .metadata.name}' -c | grep -v --extended-regexp '[[:xdigit:]]{8}(-[[:xdigit:]]{4}){3}-[[:xdigit:]]{12}' | jq -C -c '.name + " has no URL"' | sort -V > /dev/stderr
     sleep 1
 done
 
