@@ -54,16 +54,18 @@ $SCRIPT_DIR/ready_all_bmh.sh
 # Create tmpfs
 export STORAGE_DIR=~/.swarm/storage
 mkdir -p $STORAGE_DIR
+sudo umount $STORAGE_DIR/**/overlay || true
+sudo rm -rf $STORAGE_DIR/*
 sudo umount $STORAGE_DIR || true
 sudo mount -t tmpfs -o size=64000m tmpfs $STORAGE_DIR
 
-throttle=10
+throttle=3
 for bmh in $(./list_bmhs.sh); do 
-    BMH=${bmh} ./launch_from_bmh.sh &
+    BMH=${bmh} ./launch_from_bmh.sh
     throttle=$((throttle - 1))
     echo $throttle
     if [[ $throttle == "0" ]]; then
-        sleep 10;
-        throttle=10
+        sleep 5;
+        throttle=3
     fi
 done
