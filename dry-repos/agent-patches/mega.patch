@@ -91,6 +91,73 @@ index 164106c..425385d 100644
  			DiscoveryAgentVersion: config.GlobalAgentConfig.AgentVersion,
  		},
  	}
+diff --git a/src/commands/step_processor.go b/src/commands/step_processor.go
+index 347e1c6..6f51976 100644
+--- a/src/commands/step_processor.go
++++ b/src/commands/step_processor.go
+@@ -2,7 +2,6 @@ package commands
+ 
+ import (
+ 	"fmt"
+-	"io"
+ 	"net/http"
+ 	"os"
+ 	"strings"
+@@ -118,7 +117,7 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
+ 			continue
+ 		}
+ 
+-		go func(step *models.Step) {
++		func(step *models.Step) {
+ 			if code, err := s.diagnoseSystem(); code != Undetected {
+ 				log.Errorf("System issue detected before running step: <%s>, command: <%s>, args: <%v>: %s - stopping the execution", step.StepID, step.Command, step.Args, err.Error())
+ 				s.sendStepReply(s.createStepReply(step.StepType, step.StepID, "", err.Error(), int(code)))
+@@ -143,28 +142,28 @@ func (s *stepSession) handleSteps(steps *models.Steps) {
+ // This is in order to detect and report known problems otherwise manifest as confusing error messages or stuck the whole system in the steps themselves.
+ // One common example of that is virtual media disconnection.
+ func (s *stepSession) diagnoseSystem() (errorCode, error) {
+-	source, err := s.getMountpointSourceDeviceFile()
++	// source, err := s.getMountpointSourceDeviceFile()
+ 
+-	if err != nil {
+-		log.Warn(err)
+-		return Undetected, nil
+-	}
++	// if err != nil {
++	// 	log.Warn(err)
++	// 	return Undetected, nil
++	// }
+ 
+-	if source == "" {
+-		return Undetected, nil
+-	}
++	// if source == "" {
++	// 	return Undetected, nil
++	// }
+ 
+-	file, err := os.Open(source)
+-	if err != nil {
+-		return MediaDisconnected, errors.Wrap(err, "cannot access the media (ISO) - media was likely disconnected")
+-	}
++	// file, err := os.Open(source)
++	// if err != nil {
++	// 	return MediaDisconnected, errors.Wrap(err, "cannot access the media (ISO) - media was likely disconnected")
++	// }
+ 
+-	defer file.Close()
++	// defer file.Close()
+ 
+-	_, err = io.ReadFull(file, make([]byte, 2))
+-	if err != nil {
+-		return MediaDisconnected, errors.Wrap(err, "cannot read from the media (ISO) - media was likely disconnected")
+-	}
++	// _, err = io.ReadFull(file, make([]byte, 2))
++	// if err != nil {
++	// 	return MediaDisconnected, errors.Wrap(err, "cannot read from the media (ISO) - media was likely disconnected")
++	// }
+ 
+ 	return Undetected, nil
+ }
 diff --git a/src/config/agent_config.go b/src/config/agent_config.go
 index 668ec11..60ae744 100644
 --- a/src/config/agent_config.go
@@ -438,7 +505,7 @@ index 3ca68f0..621b96e 100644
  	fmt.Fprint(os.Stderr, stderr)
  	os.Exit(exitCode)
 diff --git a/src/util/execute.go b/src/util/execute.go
-index 03ac92d..9418138 100644
+index 03ac92d..f72865e 100644
 --- a/src/util/execute.go
 +++ b/src/util/execute.go
 @@ -9,6 +9,7 @@ import (
@@ -449,7 +516,7 @@ index 03ac92d..9418138 100644
  )
  
  const TimeoutExitCode = 124
-@@ -36,11 +37,29 @@ func getErrorStr(err error, stderr *bytes2.Buffer) string {
+@@ -36,11 +37,35 @@ func getErrorStr(err error, stderr *bytes2.Buffer) string {
  }
  
  func Execute(command string, args ...string) (stdout string, stderr string, exitCode int) {
@@ -457,6 +524,12 @@ index 03ac92d..9418138 100644
 +    for i := 0; i < len(args); i++ {
 +        if strings.Contains(args[i], "dd if=") {
 +            args[i] = strings.Replace(args[i], "dd if=", "true if=", 1)
++        }
++    }
++
++    for i := 0; i < len(args); i++ {
++        if strings.Contains(args[i], "/root/mtab") {
++            args[i] = strings.Replace(args[i], "/root/mtab", fmt.Sprintf("/root/mtab-%s", config.GlobalAgentConfig.HostID), 1)
 +        }
 +    }
 +
@@ -480,7 +553,7 @@ index 03ac92d..9418138 100644
  	return stdoutBytes.String(), getErrorStr(err, &stderrBytes), getExitCode(err)
  }
  
-@@ -90,7 +109,7 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
+@@ -90,7 +115,7 @@ func ExecuteShell(command string) (stdout string, stderr string, exitCode int) {
  
  func ExecutePrivileged(command string, args ...string) (stdout string, stderr string, exitCode int) {
  	commandBase := "nsenter"
@@ -488,4 +561,25 @@ index 03ac92d..9418138 100644
 +	arguments := []string{"-t", "1", "-C", "-m", "-i", "-n", "--", command}
  	arguments = append(arguments, args...)
  	return Execute(commandBase, arguments...)
+ }
+diff --git a/src/util/logging.go b/src/util/logging.go
+index 7d61a7b..b3cfa50 100644
+--- a/src/util/logging.go
++++ b/src/util/logging.go
+@@ -9,7 +9,7 @@ import (
+ 	"strings"
+ 
+ 	"github.com/sirupsen/logrus"
+-
++	"github.com/openshift/assisted-installer-agent/src/config"
+ 	"github.com/openshift/assisted-installer-agent/pkg/journalLogger"
+ )
+ 
+@@ -66,6 +66,7 @@ func setLogging(logger *logrus.Logger, journalWriter journalLogger.IJournalWrite
+ 	if journalLogging {
+ 		journalLogger.SetJournalLogging(logger, journalWriter, map[string]interface{}{
+ 			"TAG": "agent",
++			"SWARM": config.GlobalAgentConfig.HostID,
+ 		})
+ 	}
  }
