@@ -528,7 +528,7 @@ index 3ca68f0..621b96e 100644
  	fmt.Fprint(os.Stderr, stderr)
  	os.Exit(exitCode)
 diff --git a/src/util/execute.go b/src/util/execute.go
-index 03ac92d..f72865e 100644
+index 03ac92d..a2c0d39 100644
 --- a/src/util/execute.go
 +++ b/src/util/execute.go
 @@ -9,6 +9,7 @@ import (
@@ -552,7 +552,7 @@ index 03ac92d..f72865e 100644
 +
 +    for i := 0; i < len(args); i++ {
 +        if strings.Contains(args[i], "/root/mtab") {
-+            args[i] = strings.Replace(args[i], "/root/mtab", fmt.Sprintf("/root/mtab-%s", config.GlobalAgentConfig.HostID), 1)
++            args[i] = strings.Replace(args[i], "/root/mtab", fmt.Sprintf("/root/mtab-%s", config.GlobalAgentConfig.HostID), 2)
 +        }
 +    }
 +
