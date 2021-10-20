@@ -59,9 +59,9 @@ sudo rm -rf $STORAGE_DIR/*
 sudo umount $STORAGE_DIR || true
 sudo mount -t tmpfs -o size=64000m tmpfs $STORAGE_DIR
 
-export SHARED_STORAGE=~/.swarm/storage/shared/$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
+mkdir -p $STORAGE_DIR/shared
+export SHARED_STORAGE=$(mktemp --dry-run --tmpdir=${STORAGE_DIR}/shared)
 export SHARED_STORAGE_CONF=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
-mkdir -p $SHARED_STORAGE
 < /etc/containers/storage.conf tomlq '.storage.graphroot = "'${SHARED_STORAGE}'"' --toml-output > ${SHARED_STORAGE_CONF}
 curl -k ${SERVICE_ENDPOINT}/api/assisted-install/v2/component-versions | jq '.versions | to_entries[].value' -r | xargs -L1 sudo CONTAINERS_STORAGE_CONF=${SHARED_STORAGE_CONF} podman pull 
 
