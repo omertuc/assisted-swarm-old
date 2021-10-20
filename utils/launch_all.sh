@@ -64,6 +64,7 @@ export SHARED_STORAGE_CONF=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
 < /etc/containers/storage.conf tomlq '.storage.graphroot = "'${SHARED_STORAGE}'"' --toml-output > ${SHARED_STORAGE_CONF}
 curl -k ${SERVICE_ENDPOINT}/api/assisted-install/v2/component-versions | jq '.versions | to_entries[].value' -r | xargs -L1 sudo CONTAINERS_STORAGE_CONF=${SHARED_STORAGE_CONF} podman pull 
 
+# Run agents, 10 at a time
 throttle=3
 for bmh in $(./list_bmhs.sh); do 
     BMH=${bmh} ./launch_from_bmh.sh
