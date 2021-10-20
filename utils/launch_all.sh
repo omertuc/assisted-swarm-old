@@ -48,7 +48,6 @@ sudo $COPY_CMD
 
 . $SCRIPT_DIR/make-account.sh
 
-# Run agents, 10 at a time
 $SCRIPT_DIR/ready_all_bmh.sh
 
 # Create tmpfs
