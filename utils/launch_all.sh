@@ -54,7 +54,7 @@ $SCRIPT_DIR/ready_all_bmh.sh
 # Create tmpfs
 export STORAGE_DIR=~/.swarm/storage
 mkdir -p $STORAGE_DIR
-sudo umount $STORAGE_DIR
+sudo umount $STORAGE_DIR || true
 sudo mount -t tmpfs -o size=64000m tmpfs $STORAGE_DIR
 
 throttle=10
