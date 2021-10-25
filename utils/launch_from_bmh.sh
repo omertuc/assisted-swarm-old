@@ -52,6 +52,8 @@ sudo mkdir -p $container_storage
     | .storage.graphroot = "'$container_storage'"
 ' --toml-output > ${container_storage_config}
 
+container_config=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
+
 # Generate container config for this host, adjusting it to automatically propagate some environment variables from host to containers
 < /usr/share/containers/containers.conf tomlq ' .
     | .containers.env += [
