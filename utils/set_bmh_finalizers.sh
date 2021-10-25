@@ -11,7 +11,7 @@ SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 WANTED_STATE=${WANTED_STATE:-ready}
 
 # Get the current CR, set its status
-WITH_STATUS=$(oc get -n $NAMESPACE baremetalhost $BMH -ojson | jq '.metadata.finalizers = []' -c)
+WITH_STATUS=$(oc get -n $NAMESPACE baremetalhost $BMH -ojson | jq '.status = {} | .metadata.finalizers = []' -c)
 
 # PUT into the status subresource. This ignores everything that's non-status
 curl -X PUT $APISERVER/apis/metal3.io/v1alpha1/namespaces/${NAMESPACE}/baremetalhosts/${BMH}/finalize \
