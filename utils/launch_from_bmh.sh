@@ -61,12 +61,12 @@ sudo mkdir -p $container_storage
         "DRY_HOST_ID",
         "DRY_MAC_ADDRESS"
     ]
-' --toml-output > ${container_storage_config}
+' --toml-output > ${container_config}
 
 sudo \
-    CONTAINERS_CONF=${container_storage_config} \
+    CONTAINERS_CONF=${container_config} \
     CONTAINERS_STORAGE_CONF=${container_storage_config} \
     DRY_ENABLE=true \
     DRY_HOST_ID=$(uuid) \
     DRY_MAC_ADDRESS=${BMH_MAC} \
-    $AGENT_CMD
+    $AGENT_CMD &
