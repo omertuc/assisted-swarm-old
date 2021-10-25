@@ -50,16 +50,23 @@ sudo $COPY_CMD
 
 $SCRIPT_DIR/ready_all_bmh.sh
 
-# Create tmpfs
+# Create dir for swarm storage
 export STORAGE_DIR=~/.swarm/storage
 mkdir -p $STORAGE_DIR
+
+# Try to delete old tmpfs in that dir 
 sudo umount $STORAGE_DIR/**/overlay || true
 sudo rm -rf $STORAGE_DIR/*
 sudo umount $STORAGE_DIR || true
+
+# Create tmpfs on the storage dir
 sudo mount -t tmpfs -o size=64000m tmpfs $STORAGE_DIR
 
+# Create a shared storage directory for swarm agents to share their images/overlay
 mkdir -p $STORAGE_DIR/shared
 export SHARED_STORAGE=$(mktemp --dry-run --tmpdir=${STORAGE_DIR}/shared)
+
+# Pull all known images into the shared storage directory in advance
 export SHARED_STORAGE_CONF=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
 < /etc/containers/storage.conf tomlq '.storage.graphroot = "'${SHARED_STORAGE}'"' --toml-output > ${SHARED_STORAGE_CONF}
 curl -k ${SERVICE_ENDPOINT}/api/assisted-install/v2/component-versions | jq '.versions | to_entries[].value' -r | xargs -L1 sudo CONTAINERS_STORAGE_CONF=${SHARED_STORAGE_CONF} podman pull 
