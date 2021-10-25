@@ -40,9 +40,33 @@ export AGENT_CMD=$(<<< $IGNITION jq '.systemd.units[].contents' -r | grep 'ExecS
 echo $IGNITION
 echo $AGENT_CMD
 
+# Create a graphroot for this particular swarm hosthost
 container_storage=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
 container_storage_config=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
 sudo mkdir -p $container_storage
-< /etc/containers/storage.conf tomlq '.storage.options.additionalimagestores += ["'${SHARED_STORAGE}'"] | .storage.graphroot = "'$container_storage'"' --toml-output > ${container_storage_config}
 
-sudo CONTAINERS_STORAGE_CONF=${container_storage_config} $(echo $AGENT_CMD | sed -e "s@--infra-env-id@--container-storage ${container_storage_config} --force-mac ${BMH_MAC} --host-id $(uuid) --infra-env-id@") &
+# Generate container storage config for this host, using shared storage for all swarm agents
+# and graphroot just for this host
+< /etc/containers/storage.conf tomlq ' .
+    | .storage.options.additionalimagestores += ["'${SHARED_STORAGE}'"] 
+    | .storage.graphroot = "'$container_storage'"
+' --toml-output > ${container_storage_config}
+
+# Generate container config for this host, adjusting it to automatically propagate some environment variables from host to containers
+< /usr/share/containers/containers.conf tomlq ' .
+    | .containers.env += [
+        "CONTAINERS_CONF",
+        "CONTAINERS_STORAGE_CONF",
+        "DRY_ENABLE",
+        "DRY_HOST_ID",
+        "DRY_MAC_ADDRESS"
+    ]
+' --toml-output > ${container_storage_config}
+
+sudo \
+    CONTAINERS_CONF=${container_storage_config} \
+    CONTAINERS_STORAGE_CONF=${container_storage_config} \
+    DRY_ENABLE=true \
+    DRY_HOST_ID=$(uuid) \
+    DRY_MAC_ADDRESS=${BMH_MAC} \
+    $AGENT_CMD

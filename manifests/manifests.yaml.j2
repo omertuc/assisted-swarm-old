@@ -106,6 +106,5 @@ spec:
   online: true
   bootMACAddress: 00:00:00:00:{{ "{:02x}:{:02x}".format((i // 256) % 255, i % 255) }}
   bmc:
-    address: redfish-virtualmedia+http://192.168.111.1:8000/redfish/v1/Systems/a5dfe568-35b2-4d1d-b987-4c90fbdf4c28
     credentialsName: swarm-{{ i }}-bmh
 {% endfor %}
