@@ -97,8 +97,6 @@ apiVersion: metal3.io/v1alpha1
 kind: BareMetalHost
 metadata:
   name: swarm-{{ i }}
-  annotations:
-    baremetalhost.metal3.io/detached: ""
   labels:
       infraenvs.agent-install.openshift.io: swarm-{{ i }}
   namespace: swarm-{{i }}
@@ -106,5 +104,6 @@ spec:
   online: true
   bootMACAddress: 00:00:00:00:{{ "{:02x}:{:02x}".format((i // 256) % 255, i % 255) }}
   bmc:
+    address: swarm
     credentialsName: swarm-{{ i }}-bmh
 {% endfor %}
