@@ -26,7 +26,7 @@ while true; do
 done
 
 # Perform a fake download to test image service traffic 
-curl -k $(oc get baremetalhost $BMH -n $NAMESPACE -ojson | jq .spec.image.url -r) -o /dev/null
+# curl -k $(oc get baremetalhost $BMH -n $NAMESPACE -ojson | jq .spec.image.url -r) -o /dev/null
 
 # Pretend the BMH is now provisioned
 WANTED_STATE=provisioned NAMESPACE=${NAMESPACE} ${SCRIPT_DIR}/set_bmh_status.sh
