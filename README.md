@@ -35,7 +35,9 @@ I considered two approaches to fake agent traffic:
 Option (1) is definitely possible, but I felt it would be hard to maintain it and keep it up to date
 with all the API changes / agent behavior changes that will be added in the future. 
 
-Option (2) is what this repo is.
+Option (2) is what this repo is. Originally this repo contained the patches to make the agent/installer/controller no-op,
+but today the patches have been upstreamed and now the agent/installer/controller have a "dry run" mode that 
+does exactly that, and this repo makes use of that
 
 # TODO
 At its current state, the repo is able to deploy all the relevant CRs, "fake" download the discovery ISO from the
@@ -51,8 +53,7 @@ The controller is yet to be fully implemented and it currently doesn't run, so t
     - [ ] Finish controller kube-api mock implementation
 - [x] Launch script
 - [x] Install script (set hostnames/roles/machine network/approve/etc)
-- [ ] Upstream all the patches - get rid of as many patches as possible (see patch docs for more info)
-- [ ] Split `**/mega.patch` files into several separate patch files - to ease failed patch application 
+- [x] Upstream all the patches - get rid of as many patches as possible (see patch docs for more info)
 - [x] Add BMH support
 - [x] Add image service load test support
 - [ ] Run with auth enabled (load testing without auth is a bit unfair - I presume it adds a lot of CPU usage)
@@ -62,18 +63,6 @@ The controller is yet to be fully implemented and it currently doesn't run, so t
 
 # Technical, how-to-use
 ## Overview
-This repo allows you to build & run a customized no-op version of:
-
-- The assisted installer agent
-- The assisted installer 
-- The assisted controller
-
-The customization is done by applying a series of patch files that
-modify the source code of the agent & installer/controller repositories,
-then building them and publishing their images to quay.
-
-The service-under-test can then be modified to use those custom images.
-
 You can then use the provided scripts under `manifests/` to deploy n-replicas
 of the assisted installation CRs. 
 `utils/launch_all.sh` will automatically discover all the infraenvs that were created,
@@ -82,36 +71,19 @@ My current estimate for resource usage is - negligible amount of RAM per agent, 
 250m cores per agent, which is a lot - you'd need about 256 cores to run 2000 agents concurrently
 without freezing your host.
 
-The agents/installer/controller are supposed to behave just like the real thing as much as possible. This is achieved
-via the patches described in the "Patches" section below.
+The agents/installer/controller are launched using their dry-run mode.
 
-## 1. Build images
-From any machine (doesn't have to be the same machine running the swarm), run
-`QUAY_ACCOUNT=<your quay.io account> dry-repos/prepare_images.sh`
-
-This will build the patched images and publish them to:
-
-- quay.io/${QUAY_ACCOUNT}/assisted-installer-agent:swarm
-- quay.io/${QUAY_ACCOUNT}/assisted-installer:swarm
-- quay.io/${QUAY_ACCOUNT}/assisted-installer-controller:swarm
-
-So please make sure to `podman login quay.io` into the specified quay account, and 
-also create public repositories with the above names.
-
-## 2. Deploy the service-under-test
+## 1. Deploy the service-under-test
 This part is up to you. Make sure the service is accessible from the swarm machines.
 
 ### Service Configuration
 The assisted service configmap should be modified with the following parameters -
 1) `AUTH_TYPE` set to `none`
-2) `AGENT_DOCKER_IMAGE` set to point to the agent swarm image built by `dry-repos/prepare_images.sh`
-2) `INSTALLER_IMAGE` set to point to the installer swarm image built by `dry-repos/prepare_images.sh`
-3) `CONTROLLER_IMAGE` set to point to the controller swarm image built by `dry-repos/prepare_images.sh`
-4) `HW_VALIDATOR_REQUIREMENTS` can optionally be modified if your main host has less RAM then is required by default
+2) `HW_VALIDATOR_REQUIREMENTS` can optionally be modified if your main host has less RAM then is required by default
 
-## 3. Create manifests
-This step requires `jq`, `jinja2-cli` (Python package, see `requirements.txt`) and `kubectl` & `oc` binaries.
-You also need to point your kube binaries to the cluster the assisted service is running on.
+## 2. Create manifests
+This step requires `jq`, `jinja2-cli`, `yq` (Python packages, see `requirements.txt`) and `kubectl` & `oc` binaries.
+You also need to point your kubectl/oc to the cluster the assisted service is running on.
 
 Test parameters such as pull-secret, SSH keys, and exact number of swarm replicas should be set
 in the `manifests/manifests-data.example.json` file. A default SSH key is provided and since we're
@@ -124,28 +96,7 @@ the swarm CRs respectively.
 These scripts too can be ran from a machine that is not the swarm machine, as long as they both point
 to the same service
 
-## 4. Launch the agents
-There are two modes to launch the agents - 
+## 3. Launch the agents
+The agents are launched using the `utils/launch_all.sh` script. Make sure to set the SERVICE_ENDPOINT to point
+at the service's API endpoint.
 
-- `infraenv` - This mode launches the agents directly from infraenvs without messing around with BMHs
-- `bmh` - This mode simulates BMH state changes and downloads ISO images from the BMH image URL stanza
-
-The mode can be changed inside the `utils/launch_all.sh` script
-
-To be continued
-
-# Patches
-The agent and installer/controller repositories had to be modified to make them fit
-to be ran inside the swarm. This section describes/documents the various patches that
-get applied to achieve that.
-
-Note: ideally, we should slowly move those patches up-stream and give the real agent/installer/controller
-a "simulator" mode so those patches don't have to be maintained separately in this repo. The more patches
-we maintain in this repo, the easier it would be for the agent/installer to go out of sync and this repo
-becoming broken as a result.
-
-## Agent Patches
-See [Agent Patches documentation](dry-repos/agent-patches/doc.md)
-
-## Installer Patches
-See [Installer / Controller Patches documentation](dry-repos/installer-patches/doc.md)

@@ -31,7 +31,7 @@ fi
 set -e
 
 # Create some files the agent expects to exist
-sudo cp $SCRIPT_DIR/swarm-installer /usr/local/bin/swarm-installer
+sudo cp $SCRIPT_DIR/swarm-installer /usr/local/bin/dry-installer
 sudo mkdir -p /opt/openshift/
 sudo touch /opt/openshift/.bootkube.done
 sudo touch /opt/openshift/master.ign

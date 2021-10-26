@@ -61,7 +61,8 @@ container_config=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
         "CONTAINERS_STORAGE_CONF",
         "DRY_ENABLE",
         "DRY_HOST_ID",
-        "DRY_MAC_ADDRESS"
+        "DRY_MAC_ADDRESS",
+        "PULL_SECRET_TOKEN"
     ]
 ' --toml-output > ${container_config}
 
