@@ -11,9 +11,9 @@ echo Speaking to service at $SERVICE_ENDPOINT
 sudo dnf install -y $(cat $SCRIPT_DIR/../dnf-dependencies.txt)
 
 # Make sure the pull secret is configured for podman
-PULL_SECRET=$(oc get secret -n swarm-1 swarm-1-pull -ojson | jq '.data.".dockerconfigjson"' -r | base64 -d)
+export PULL_SECRET_TOKEN=$(oc get secret -n swarm-1 swarm-1-pull -ojson | jq '.data.".dockerconfigjson"' -r | base64 -d)
 sudo mkdir -p /root/.docker
-sudo tee /root/.docker/config.json >/dev/null <<< $PULL_SECRET
+sudo tee /root/.docker/config.json >/dev/null <<< $PULL_SECRET_TOKEN
 
 # Kill previously running agents / step containers / next_step_runners
 sudo killall agent || true

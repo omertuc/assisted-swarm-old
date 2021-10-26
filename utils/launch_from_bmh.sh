@@ -68,7 +68,9 @@ container_config=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
 
 sudo \
     CONTAINERS_CONF=${container_config} \
+    CONTAINERS_CONF=${container_config} \
     CONTAINERS_STORAGE_CONF=${container_storage_config} \
+    PULL_SECRET_TOKEN=${PULL_SECRET_TOKEN} \
     DRY_ENABLE=true \
     DRY_HOST_ID=$(uuid) \
     DRY_MAC_ADDRESS=${BMH_MAC} \
