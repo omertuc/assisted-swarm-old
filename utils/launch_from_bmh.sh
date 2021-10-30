@@ -104,7 +104,7 @@ function launch_controller {
         -e CHECK_CLUSTER_VERSION=true \
         -e DRY_HOSTNAME=$(hostname) \
         -e DRY_MCS_ACCESS_IP=10.5.190.36 \
-        $CONTROLLER_IMAGE assisted-installer-controller
+        $CONTROLLER_IMAGE 
 }
 
 launch_controller &

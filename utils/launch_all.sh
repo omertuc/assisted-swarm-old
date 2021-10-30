@@ -73,7 +73,7 @@ curl -k ${SERVICE_ENDPOINT}/api/assisted-install/v2/component-versions | jq '
     .versions | to_entries[] | select(.key != "assisted-installer-service") | .value
 ' -r | xargs -L1 sudo CONTAINERS_STORAGE_CONF=${SHARED_STORAGE_CONF} podman pull 
 
-export CONTROLLER_IMAGE=$(curl -k ${SERVICE_ENDPOINT}/api/assisted-install/v2/component-versions | jq '.versions.assisted-installer-controller' -r)
+export CONTROLLER_IMAGE=$(curl -k ${SERVICE_ENDPOINT}/api/assisted-install/v2/component-versions | jq '.versions."assisted-installer-controller"' -r)
 
 # Run agents, 10 at a time
 throttle=3
