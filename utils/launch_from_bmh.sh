@@ -64,7 +64,7 @@ DRY_FAKE_REBOOT_MARKER_PATH=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
         "DRY_ENABLE",
         "DRY_HOST_ID",
         "DRY_MAC_ADDRESS",
-        "PULL_SECRET_TOKEN"
+        "PULL_SECRET_TOKEN",
         "DRY_FAKE_REBOOT_MARKER_PATH"
     ]
 ' --toml-output > ${container_config}
