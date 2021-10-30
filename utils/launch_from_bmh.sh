@@ -90,9 +90,10 @@ function launch_controller {
         sleep 5
     done
 
-    sudo podman run -it \
+    sudo \
         CONTAINERS_CONF=${container_config} \
         CONTAINERS_STORAGE_CONF=${container_storage_config} \
+        podman run -it \
         -e CLUSTER_ID=${INFRAENV_ID} \
         -e DRY_ENALBED=true \
         -e INVENTORY_URL=${SERVICE_ENDPOINT} \
