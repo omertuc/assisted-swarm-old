@@ -54,6 +54,8 @@ sudo mkdir -p $container_storage
 
 container_config=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
 
+DRY_FAKE_REBOOT_MARKER_PATH=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
+
 # Generate container config for this host, adjusting it to automatically propagate some environment variables from host to containers
 < /usr/share/containers/containers.conf tomlq ' .
     | .containers.env += [
@@ -63,17 +65,18 @@ container_config=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
         "DRY_HOST_ID",
         "DRY_MAC_ADDRESS",
         "PULL_SECRET_TOKEN"
+        "DRY_FAKE_REBOOT_MARKER_PATH"
     ]
 ' --toml-output > ${container_config}
 
 sudo \
-    CONTAINERS_CONF=${container_config} \
     CONTAINERS_CONF=${container_config} \
     CONTAINERS_STORAGE_CONF=${container_storage_config} \
     PULL_SECRET_TOKEN=${PULL_SECRET_TOKEN} \
     DRY_ENABLE=true \
     DRY_HOST_ID=$(uuid) \
     DRY_MAC_ADDRESS=${BMH_MAC} \
+    DRY_FAKE_REBOOT_MARKER_PATH=${DRY_FAKE_REBOOT_MARKER_PATH} \
     $AGENT_CMD &
 
 function launch_controller {
@@ -88,11 +91,14 @@ function launch_controller {
     done
 
     sudo podman \
+        CONTAINERS_CONF=${container_config} \
+        CONTAINERS_STORAGE_CONF=${container_storage_config} \
         -e CLUSTER_ID=${INFRAENV_ID} \
         -e DRY_ENALBED=true \
         -e INVENTORY_URL=${SERVICE_ENDPOINT} \
         -e PULL_SECRET_TOKEN=${PULL_SECRET_TOKEN} \
         -e OPENSHIFT_VERSION=4.8 \
+        -e DRY_FAKE_REBOOT_MARKER_PATH=${DRY_FAKE_REBOOT_MARKER_PATH} \
         -e SKIP_CERT_VERIFICATION=true \
         -e HIGH_AVAILABILITY_MODE=false \
         -e CHECK_CLUSTER_VERSION=true \
