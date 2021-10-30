@@ -90,7 +90,7 @@ function launch_controller {
         sleep 5
     done
 
-    sudo podman \
+    sudo podman run -it \
         CONTAINERS_CONF=${container_config} \
         CONTAINERS_STORAGE_CONF=${container_storage_config} \
         -e CLUSTER_ID=${INFRAENV_ID} \
