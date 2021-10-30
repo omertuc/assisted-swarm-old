@@ -83,7 +83,7 @@ function launch_controller {
     while true; do
         AGENT_CLUSTER_INSTALL=${NAMESPACE}
         INFRAENV_ID=$(oc get agentclusterinstall -n ${NAMESPACE} ${AGENT_CLUSTER_INSTALL} -ojson  | jq '.spec.clusterMetadata.infraID' -r)
-        if [ -n "$INFRAENV_ID" ]; then
+        if [ "$INFRAENV_ID" != "null" ] && [ "$INFRAENV_ID" != "" ]; then
             break;
         fi
         echo "Waiting for infraenv ID for ${AGENT_CLUSTER_INSTALL}"
