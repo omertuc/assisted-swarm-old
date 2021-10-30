@@ -75,3 +75,30 @@ sudo \
     DRY_HOST_ID=$(uuid) \
     DRY_MAC_ADDRESS=${BMH_MAC} \
     $AGENT_CMD &
+
+function launch_controller {
+    while true; do
+        AGENT_CLUSTER_INSTALL=${NAMESPACE}
+        INFRAENV_ID=$(oc get agentclusterinstall -n ${NAMESPACE} ${AGENT_CLUSTER_INSTALL} -ojson  | jq '.spec.clusterMetadata.infraID' -r)
+        if [ -n "$INFRAENV_ID" ]; then
+            break;
+        fi
+        echo "Waiting for infraenv ID for ${AGENT_CLUSTER_INSTALL}"
+        sleep 5
+    done
+
+    sudo podman \
+        -e CLUSTER_ID=${INFRAENV_ID} \
+        -e DRY_ENALBED=true \
+        -e INVENTORY_URL=${SERVICE_ENDPOINT} \
+        -e PULL_SECRET_TOKEN=${PULL_SECRET_TOKEN} \
+        -e OPENSHIFT_VERSION=4.8 \
+        -e SKIP_CERT_VERIFICATION=true \
+        -e HIGH_AVAILABILITY_MODE=false \
+        -e CHECK_CLUSTER_VERSION=true \
+        -e DRY_HOSTNAME=$(hostname) \
+        -e DRY_MCS_ACCESS_IP=10.5.190.36 \
+        $CONTROLLER_IMAGE assisted-installer-controller
+}
+
+launch_controller &
