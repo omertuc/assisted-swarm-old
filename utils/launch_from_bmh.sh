@@ -105,6 +105,7 @@ function launch_controller {
         -e CHECK_CLUSTER_VERSION=true \
         -e DRY_HOSTNAME=$(hostname) \
         -e DRY_MCS_ACCESS_IP=10.5.190.36 \
+        -v ${DRY_FAKE_REBOOT_MARKER_PATH}:${DRY_FAKE_REBOOT_MARKER_PATH} \
         $CONTROLLER_IMAGE 
 }
 
