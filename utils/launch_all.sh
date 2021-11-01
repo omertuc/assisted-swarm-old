@@ -58,7 +58,7 @@ mkdir -p $STORAGE_DIR
 sudo umount $STORAGE_DIR/**/overlay || true
 sudo rm -rf $STORAGE_DIR/*
 sudo umount $STORAGE_DIR || true
-sudo findmnt --json --list | jq '.filesystems[] | select(.target | test("'$STORAGE_DIR'/")).target' -r | sudo xargs umount
+sudo findmnt --json --list | jq '.filesystems[] | select(.target | test("'$STORAGE_DIR'/")).target' -r | sudo xargs umount || true
 
 # Create tmpfs on the storage dir
 sudo mount -t tmpfs -o size=64000m tmpfs $STORAGE_DIR
