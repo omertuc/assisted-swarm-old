@@ -66,7 +66,7 @@ DRY_FAKE_REBOOT_MARKER_PATH=$(mktemp --dry-run --tmpdir=${STORAGE_DIR})
         "DRY_MAC_ADDRESS",
         "PULL_SECRET_TOKEN",
         "DRY_FAKE_REBOOT_MARKER_PATH"
-    ]
+    ] | .engine.num_locks = 4000
 ' --toml-output > ${container_config}
 
 sudo \
