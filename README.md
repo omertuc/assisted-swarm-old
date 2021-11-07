@@ -3,12 +3,10 @@ Although the code in this repo tries its best to be non-destructive, it has a bi
 to mess up the machine it's running on - so you should probably run it in a disposable VM.
 
 # What is this
-This is a tool to launch a swarm of asssisted installer agents that look
-to the service like actual cluster host agents, all the way from discovery/bmh to completed
-installation and controller progress reports, for the purpose of load-testing the service.
-
-This repo also contains helper scripts to deploy & manage the relevant CRs for assisted
-kube-api installation of the swarm, and running the agents described above to act as the swarm.
+This is a tool to launch a swarm of asssisted installer agents (and their corresponding cluster CRs)
+that look to the service like actual cluster host agents, all the way from discovery/bmh to completed
+installation and controller progress reports, for the purpose of load-testing the service. This is made 
+possible by utilizing the dry-run mode of the agent/installer/controller.
 
 # Background
 Originally, the assisted installer service has been load-tested by installing actual clusters
@@ -40,63 +38,20 @@ but today the patches have been upstreamed and now the agent/installer/controlle
 does exactly that, and this repo makes use of that
 
 # TODO
-At its current state, the repo is able to deploy all the relevant CRs, "fake" download the discovery ISO from the
-image service, start a lot of agents, update the BMH status accordingly to make BMAC approve the agents, modify the
-agent CRs with cluster binding, and run the assisted installer / controller all the way to the "Joined" stage.
-The controller is yet to be fully implemented and it currently doesn't run, so the hosts only actually reach "Rebooting".
-
-- [x] Manifests jinja2 templates
-- [x] Working patched agent
-    - [x] Fix weird `stateInfo: Failed - config is not valid` bug that happens 1/25 fake agents
-- [x] Working patched installer
-- [x]  Working patched controller
-    - [x] Finish controller kube-api mock implementation
-- [x] Launch script
-- [x] Install script (set hostnames/roles/machine network/approve/etc)
-- [x] Upstream all the patches - get rid of as many patches as possible (see patch docs for more info)
-- [x] Add BMH support
-- [x] Add image service load test support
 - [ ] Run with auth enabled (load testing without auth is a bit unfair - I presume it adds a lot of CPU usage)
-- [x] Run with https enabled (load testing without https is a bit unfair - I presume it adds a lot of CPU usage)
-- [ ] Automate service configuration
 - [ ] Query prometheus, extract interesting metrics (graphana dashboards? matplotlib?)
+- [ ] Multi-node clusters
+- [ ] AI SaaS clusters (currently only kube-api is supported)
+
 
 # Technical, how-to-use
 ## Overview
-You can then use the provided scripts under `manifests/` to deploy n-replicas
-of the assisted installation CRs. 
-`utils/launch_all.sh` will automatically discover all the infraenvs that were created,
-and will launch n agents matching those infraenvs on the host where the script is ran.
-My current estimate for resource usage is - negligible amount of RAM per agent, but about
-250m cores per agent, which is a lot - you'd need about 256 cores to run 2000 agents concurrently
-without freezing your host.
-
-The agents/installer/controller are launched using their dry-run mode.
-
-## 1. Deploy the service-under-test
-This part is up to you. Make sure the service is accessible from the swarm machines.
-
-### Service Configuration
-The assisted service configmap should be modified with the following parameters -
-1) `AUTH_TYPE` set to `none`
-2) `HW_VALIDATOR_REQUIREMENTS` can optionally be modified if your main host has less RAM then is required by default
-
-## 2. Create manifests
-This step requires `jq`, `jinja2-cli`, `yq` (Python packages, see `requirements.txt`) and `kubectl` & `oc` binaries.
-You also need to point your kubectl/oc to the cluster the assisted service is running on.
-
-Test parameters such as pull-secret, SSH keys, and exact number of swarm replicas should be set
-in the `manifests/manifests-data.example.json` file. A default SSH key is provided and since we're
-not actually installing anything, there's no point in modifying it to your own SSH key.
-
-After configuration `manifests/manifests-data.example.json` you may run `manifests/render.sh` to make sure
-everything is working as expected, then you can use `manifests/apply.sh` and `manifests/delete.sh` to create/delete
-the swarm CRs respectively.
-
-These scripts too can be ran from a machine that is not the swarm machine, as long as they both point
-to the same service
-
-## 3. Launch the agents
-The agents are launched using the `utils/launch_all.sh` script. Make sure to set the SERVICE_ENDPOINT to point
-at the service's API endpoint.
+1. Launch a kube-api assisted service on your cluster. This part is up to you. Make sure the service is accessible from the machine running the swarm.
+2. Configure the service -
+    - `AUTH_TYPE` set to `none`
+    - `HW_VALIDATOR_REQUIREMENTS` can optionally be modified if your main host has less RAM then is required by default
+3. On the swarm machine, install the packages in `requirements.txt` and make sure you have `kubectl` and `oc` binaries in your `PATH`.
+   You also need to point your kubectl/oc to the cluster the assisted service is running on.
+3. Run `./swarm.py` - Currently the user interface is work in progress, but for now just modify the `main()` function with the parameters
+   of your environment.
 
