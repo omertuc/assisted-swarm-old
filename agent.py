@@ -372,7 +372,7 @@ class Agent(RetryingStateMachine):
             "DRY_ENABLE": "true",
             "INVENTORY_URL": self.service_url,
             "PULL_SECRET_TOKEN": self.pull_secret,
-            "OPENSHIFT_VERSION": 4.8,  # TODO: Make this configurable? Does it matter in any way?
+            "OPENSHIFT_VERSION": 4.9,  # TODO: Make this configurable? Does it matter in any way?
             "DRY_FAKE_REBOOT_MARKER_PATH": str(self.fake_reboot_marker_path),
             "SKIP_CERT_VERIFICATION": "true",
             "HIGH_AVAILABILITY_MODE": "false",

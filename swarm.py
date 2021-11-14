@@ -390,7 +390,7 @@ def main(
     swarm = Swarm(
         graphroot="/root/.cache/swarm/debug",
         pull_secret=omer_ps,
-        service_url="https://assisted-service-open-cluster-management.apps.jetlag-ibm.performance-scale.cloud",
+        service_url="https://assisted-service-open-cluster-management.apps.jetlag-ibm0.performance-scale.cloud",
         ssh_pub_key=r"ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLK6KYdjOHpuDxS6wFG8ts/7X6nPTHHfsXxN34PGY/HCEAwHSgw6ShWIwcqueGfR9kgPGdClWZrX25MdnF3d+6Y= swarm@swarm",
         # TODO: Determine these automatically
         machine_network="10.5.190.0/26",
