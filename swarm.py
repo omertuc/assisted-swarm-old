@@ -4,7 +4,8 @@ from rich.logging import RichHandler
 
 from collections import OrderedDict
 from pathlib import Path
-from typing import List
+from concurrent.futures import ThreadPoolExecutor
+import plac
 import time
 import threading
 import logging
@@ -365,7 +366,10 @@ class Swarm(RetryingStateMachine):
         return agent.start()
 
 
-def main():
+def main(
+        max_concurrent: "Max concurrent agents - recommended around 6 per core",
+        agents: "Number of agents to launch",
+):
     logging.basicConfig(level=logging.INFO)
     # with open("/home/omer/omer-ps", "r") as f:
     #     omer_ps = f.read().strip()
@@ -392,22 +396,17 @@ def main():
         machine_network="10.5.190.0/26",
         machine_ip="10.5.190.36",
     )
-
     swarm.start()
 
-    agents = []
+    agent_jobs = []
+    with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
+        for i in range(agents):
+            agent_job = executor.submit(swarm.launch_agent)
+            agent_jobs.append(agent_job)
 
-    for i in range(1000):
-        agent_thread = threading.Thread(target=swarm.launch_agent, args=(i,))
-        agent_thread.start()
-        agents.append(agent_thread)
-        time.sleep(1)
-
-    swarm.logging.info("All agents launched")
-
-    for i, agent in enumerate(agents):
+    for i, agent_job in enumerate(agent_jobs):
         swarm.logging.info(f"Waiting for agent {i} to finish")
-        agent.join()
+        agent_job.result()
 
     swarm.logging.info(f"All agents finished, exiting")
 
@@ -416,6 +415,6 @@ def main():
 
 if __name__ == "__main__":
     try:
-        main()
+        plac.call(main)
     except Exception as e:
         logging.exception(e)
