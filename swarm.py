@@ -346,7 +346,7 @@ class Swarm(RetryingStateMachine):
             machine_network=self.machine_network,
             machine_ip=self.machine_ip,
             pull_secret=self.pull_secret,
-            release_image="quay.io/openshift-release-dev/ocp-release:4.8.9-x86_64",
+            release_image="quay.io/openshift-release-dev/ocp-release:4.9.7-x86_64",
             service_url=self.service_url,
             shared_storage=self.shared_graphroot,
             ssh_pub_key=self.ssh_pub_key,
