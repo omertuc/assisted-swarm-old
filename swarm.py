@@ -399,8 +399,8 @@ def main(
     swarm.start()
 
     agent_jobs = []
-    with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
-        for i in range(agents):
+    with ThreadPoolExecutor(max_workers=int(max_concurrent)) as executor:
+        for i in range(int(agents)):
             agent_job = executor.submit(swarm.launch_agent)
             agent_jobs.append(agent_job)
 
