@@ -1,0 +1,34 @@
+apiVersion: extensions.hive.openshift.io/v1beta1
+kind: AgentClusterInstall
+metadata:
+  name: {{ cluster_identifier }}
+  namespace: {{ cluster_identifier }}
+spec:
+  clusterDeploymentRef:
+    name: {{ cluster_identifier }}
+  compute:
+  - hyperthreading: Enabled
+    name: worker
+  controlPlane:
+    hyperthreading: Enabled
+    name: master
+  imageSetRef:
+    name: {{ cluster_identifier }}
+  networking:
+    clusterNetwork:
+    - cidr: 10.128.0.0/14
+      hostPrefix: 23
+    {% if single_node %}
+    machineNetwork:
+    - cidr: {{ machine_network }}
+    {% endif %}
+    serviceNetwork:
+    - 172.30.0.0/16
+  {% if not single_node %}
+  apiVIP: {{ api_vip }}
+  ingressVIP: {{ ingress_vip }}
+  {% endif %}
+  provisionRequirements:
+    controlPlaneAgents: {{ num_control_plane }}
+    workerAgents: {{ num_workers }}
+    sshPublicKey: {{ ssh_pub_key }}

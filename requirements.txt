@@ -3,3 +3,4 @@ yq
 rich
 requests
 plac
+pyyaml

@@ -1,0 +1,15 @@
+apiVersion: metal3.io/v1alpha1
+kind: BareMetalHost
+metadata:
+  name: {{ agent_identifier }}
+  annotations:
+      bmac.agent-install.openshift.io/role: {{ role }}
+  labels:
+      infraenvs.agent-install.openshift.io: {{ cluster_identifier }}
+  namespace: {{ cluster_identifier }}
+spec:
+  online: true
+  bootMACAddress: {{ mac_address }}
+  bmc:
+    address: swarm
+    credentialsName: {{ agent_identifier }}-bmh

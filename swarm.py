@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 
-from rich.logging import RichHandler
-
 from collections import OrderedDict
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor
-import plac
 import time
 import threading
 import logging
@@ -18,36 +14,33 @@ import os
 
 from statemachine import RetryingStateMachine
 from swarmexecutor import SwarmExecutor
-from containerconfig import ContainerConfigWithEnvAndNumLocks, ContainerStorageConfigWithGraphroot, system_container_storage_config, system_container_config
-from agent import Agent
+from containerconfig import (
+    ContainerConfigWithEnvAndNumLocks,
+    ContainerStorageConfigWithGraphroot,
+    system_container_storage_config,
+    system_container_config,
+)
+from agent import SwarmAgentConfig
+from cluster import Cluster, ClusterConfig
 from swarmkubecache import SwarmKubeCache
 
 
-logging.basicConfig(
-    level="INFO",
-    format="%(message)s",
-    datefmt="[%X]",
-    handlers=[RichHandler(rich_tracebacks=True)],
-)
-
-log = logging.getLogger("rich")
-
-
 def get_user_cache_dir():
-    return Path(os.environ["XDG_CACHE_HOME"] if "XDG_CACHE_HOME" in os.environ else os.path.join(os.environ["HOME"], ".cache"))
+    return Path(
+        os.environ["XDG_CACHE_HOME"] if "XDG_CACHE_HOME" in os.environ else os.path.join(os.environ["HOME"], ".cache")
+    )
 
 
-swarm_directory = get_user_cache_dir() / "swarm"
+global_swarm_directory = get_user_cache_dir() / "swarm"
 
 # The default number of locks used by podman is 2048, this is insufficient for our use case
 num_locks = 9000
 bad_lock_return_code = 125
 
+
 class Swarm(RetryingStateMachine):
-    def __init__(self, pull_secret, service_url, ssh_pub_key, machine_network, machine_ip, graphroot=None):
+    def __init__(self, pull_secret, service_url, ssh_pub_key):
         self.ssh_pub_key = ssh_pub_key
-        self.machine_network = machine_network
-        self.machine_ip = machine_ip
         self.pull_secret = pull_secret
         self.service_url = service_url
         self.logging = logging.getLogger("swarm")
@@ -55,11 +48,11 @@ class Swarm(RetryingStateMachine):
 
         now_second = int(time.time())
         self.identifier = f"swarm-{now_second}"
-        self.swarm_dir = swarm_directory / self.identifier
+        self.swarm_dir = global_swarm_directory / self.identifier
 
         super().__init__(
             initial_state="Initializing",
-            terminal_state="Ready to create agents",
+            terminal_state="Ready to create clusters",
             states=OrderedDict(
                 {
                     "Initializing": self.initialize,
@@ -78,16 +71,12 @@ class Swarm(RetryingStateMachine):
                     "Retrieving binary": self.retrieve_agent_binary,
                     "Creating CA Cert": self.create_ca_cert,
                     "Determining hostname": self.determine_hostname,
-                    "Ready to create agents": self.ready_to_create_agents,
+                    "Ready to create clusters": self.ready_to_create_clusters,
                 }
             ),
             logging=self.logging,
             name=f"Swarm",
         )
-
-        if graphroot is not None:
-            del self.states["Creating shared container image storage"]
-            self.shared_graphroot = graphroot
 
     def validate_system_podman_lock_config(self, next_state):
         with ContainerConfigWithEnvAndNumLocks(
@@ -106,7 +95,8 @@ class Swarm(RetryingStateMachine):
             except subprocess.CalledProcessError as e:
                 if e.returncode == bad_lock_return_code:
                     self.logging.info(
-                        f'System podman lock config is not valid, please edit the "num_locks" in "{system_container_config}" to have the value {num_locks} and then run "sudo podman system renumber". If you get an error, delete "/dev/shm/libpod_lock" and try again')
+                        f'System podman lock config is not valid, please edit the "num_locks" in "{system_container_config}" to have the value {num_locks} and then run "sudo podman system renumber". If you get an error, delete "/dev/shm/libpod_lock" and try again'
+                    )
                     return self.state
 
                 raise
@@ -157,12 +147,13 @@ class Swarm(RetryingStateMachine):
                     pull_command_env = {"CONTAINERS_STORAGE_CONF": shared_graphroot_conf}
 
                     self.executor.check_call(
-                        self.executor.prepare_sudo_command(pull_command, pull_command_env), env={**os.environ, **pull_command_env}
+                        self.executor.prepare_sudo_command(pull_command, pull_command_env),
+                        env={**os.environ, **pull_command_env},
                     )
 
         return next_state
 
-    def ready_to_create_agents(self, _):
+    def ready_to_create_clusters(self, _):
         return self.state
 
     def create_serviceaccount(self, next_state):
@@ -213,7 +204,9 @@ class Swarm(RetryingStateMachine):
 
         try:
             secret_name = next(
-                secret["name"] for secret in service_accounts["secrets"] if secret["name"].startswith(f"{self.identifier}-token-")
+                secret["name"]
+                for secret in service_accounts["secrets"]
+                if secret["name"].startswith(f"{self.identifier}-token-")
             )
         except StopIteration:
             logging.info("Service account doesn't list the token secret yet")
@@ -267,7 +260,9 @@ class Swarm(RetryingStateMachine):
         agent_binary_dir.mkdir(parents=True, exist_ok=True)
 
         with ContainerStorageConfigWithGraphroot(
-            system_container_storage_config, self.shared_graphroot, prefix="agent_binary_retrieval_container_storage_config_"
+            system_container_storage_config,
+            self.shared_graphroot,
+            prefix="agent_binary_retrieval_container_storage_config_",
         ) as shared_graphroot_conf:
             podman_command = [
                 "podman",
@@ -284,7 +279,8 @@ class Swarm(RetryingStateMachine):
             podman_command_env = {"CONTAINERS_STORAGE_CONF": shared_graphroot_conf}
 
             self.executor.check_call(
-                self.executor.prepare_sudo_command(podman_command, podman_command_env), env={**os.environ, **podman_command_env}
+                self.executor.prepare_sudo_command(podman_command, podman_command_env),
+                env={**os.environ, **podman_command_env},
             )
 
         self.agent_bin = agent_binary_dir / "agent"
@@ -301,7 +297,7 @@ class Swarm(RetryingStateMachine):
         return next_state
 
     def create_shared_container_image_storage(self, next_state):
-        self.shared_graphroot = self.swarm_dir / "shared_graphroot"
+        self.shared_graphroot = global_swarm_directory / "shared_graphroot"
         self.shared_graphroot.mkdir(parents=True, exist_ok=True)
 
         return next_state
@@ -335,86 +331,43 @@ class Swarm(RetryingStateMachine):
         self.kube_cache_done.set()
         self.kube_cache_thread.join()
 
-    def launch_agent(self, index):
-        logging.getLogger("swarm")
-        agent = Agent(
-            agent_binary=self.agent_bin,
-            agent_image_path=self.service_image_urls["discovery-agent"],
-            controller_image_path=self.service_image_urls["assisted-installer-controller"],
-            ca_cert_path=self.ca_cert_path,
-            index=index,
-            machine_network=self.machine_network,
-            machine_ip=self.machine_ip,
-            pull_secret=self.pull_secret,
-            release_image="quay.io/openshift-release-dev/ocp-release:4.9.7-x86_64",
-            service_url=self.service_url,
-            shared_storage=self.shared_graphroot,
-            ssh_pub_key=self.ssh_pub_key,
-            storage_dir=self.swarm_dir,
-            executor=self.executor,
-            logging=self.logging,
-            token=self.token,
-            swarm_identifier=self.identifier,
-            shared_graphroot=self.shared_graphroot,
-            k8s_api_server_url=self.k8s_api_server_url,
-            machine_hostname=self.machine_hostname,
-            kube_cache=self.kube_cache,
-            num_locks=num_locks,
+    def launch_cluster(self, index, task_pool, single_node, num_workers):
+        cluster = Cluster(
+            ClusterConfig(
+                logging=self.logging,
+                single_node=single_node,
+                num_workers=num_workers,
+                storage_dir=self.swarm_dir,
+                ssh_pub_key=self.ssh_pub_key,
+                pull_secret=self.pull_secret,
+                task_pool=task_pool,
+                controller_image_path=self.service_image_urls["assisted-installer-controller"],
+                index=index,
+                release_image="quay.io/openshift-release-dev/ocp-release:4.9.7-x86_64",
+                swarm_identifier=self.identifier,
+                num_locks=num_locks,
+                service_url=self.service_url,
+                kube_cache=self.kube_cache,
+                executor=self.executor,
+                shared_graphroot=self.shared_graphroot,
+            ),
+            SwarmAgentConfig(
+                agent_binary=self.agent_bin,
+                agent_image_path=self.service_image_urls["discovery-agent"],
+                ca_cert_path=self.ca_cert_path,
+                pull_secret=self.pull_secret,
+                service_url=self.service_url,
+                shared_storage=self.shared_graphroot,
+                ssh_pub_key=self.ssh_pub_key,
+                executor=self.executor,
+                logging=self.logging,
+                token=self.token,
+                shared_graphroot=self.shared_graphroot,
+                k8s_api_server_url=self.k8s_api_server_url,
+                kube_cache=self.kube_cache,
+                num_locks=num_locks,
+            ),
         )
 
-        self.logging.info("Launching agent")
-        return agent.start()
-
-
-def main(
-        max_concurrent: "Max concurrent agents - recommended around 6 per core",
-        agents: "Number of agents to launch",
-):
-    logging.basicConfig(level=logging.INFO)
-    # with open("/home/omer/omer-ps", "r") as f:
-    #     omer_ps = f.read().strip()
-
-    # swarm = Swarm(
-    #     graphroot="/homer/omer/.cache/swarm/debug",
-    #     pull_secret=omer_ps,
-    #     service_url="https://assisted-service-open-cluster-management.apps.jetlag-ibm.performance-scale.cloud",
-    #     ssh_pub_key=r"ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLK6KYdjOHpuDxS6wFG8ts/7X6nPTHHfsXxN34PGY/HCEAwHSgw6ShWIwcqueGfR9kgPGdClWZrX25MdnF3d+6Y= swarm@swarm",
-    #     # TODO: Determine these automatically
-    #     machine_network="192.168.2.0/24",
-    #     machine_ip="192.168.2.112",
-    # )
-
-    with open("/root/omer-ps", "r") as f:
-        omer_ps = f.read().strip()
-
-    swarm = Swarm(
-        graphroot="/root/.cache/swarm/debug",
-        pull_secret=omer_ps,
-        service_url="https://assisted-service-open-cluster-management.apps.jetlag-ibm0.performance-scale.cloud",
-        ssh_pub_key=r"ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLK6KYdjOHpuDxS6wFG8ts/7X6nPTHHfsXxN34PGY/HCEAwHSgw6ShWIwcqueGfR9kgPGdClWZrX25MdnF3d+6Y= swarm@swarm",
-        # TODO: Determine these automatically
-        machine_network="10.5.190.0/26",
-        machine_ip="10.5.190.36",
-    )
-    swarm.start()
-
-    agent_jobs = []
-    with ThreadPoolExecutor(max_workers=int(max_concurrent)) as executor:
-        for i in range(int(agents)):
-            agent_job = executor.submit(swarm.launch_agent, i)
-            agent_jobs.append(agent_job)
-
-    for i, agent_job in enumerate(agent_jobs):
-        swarm.logging.info(f"Waiting for agent {i} to finish")
-        agent_job.result()
-
-    swarm.logging.info(f"All agents finished, exiting")
-
-    swarm.finalize()
-
-
-if __name__ == "__main__":
-    try:
-        plac.call(main)
-    except Exception as e:
-        logging.exception(e)
+        self.logging.info("Launching cluster")
+        return cluster.start()
