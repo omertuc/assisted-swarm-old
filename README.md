@@ -43,15 +43,12 @@ does exactly that, and this repo makes use of that
 - [ ] Multi-node clusters
 - [ ] AI SaaS clusters (currently only kube-api is supported)
 
-
-# Technical, how-to-use
-## Overview
+# Usage
 1. Launch a kube-api assisted service on your cluster. This part is up to you. Make sure the service is accessible from the machine running the swarm.
 2. Configure the service -
     - `AUTH_TYPE` set to `none`
-    - `HW_VALIDATOR_REQUIREMENTS` can optionally be modified if your main host has less RAM then is required by default
+    - `HW_VALIDATOR_REQUIREMENTS` can optionally be modified if your swarm machine has less RAM then is required by default
 3. On the swarm machine, install the packages in `requirements.txt` and make sure you have `kubectl` and `oc` binaries in your `PATH`.
    You also need to point your kubectl/oc to the cluster the assisted service is running on.
-3. Run `./swarm.py` - Currently the user interface is work in progress, but for now just modify the `main()` function with the parameters
-   of your environment.
-
+4. Modify `./swarm.py` with your pull secret / service endpoint. This part is a bit messy and will be improved in the future.
+5. Run `sudo KUBECONFIG=/path/to/cluster/kubeconfig ./swarm.py 200 5000`. This will launch 5000 single node installations (at most 200 in parallel). 200 was chosen to fit a 32-cores machine, in general it should be somewhere around cores * 6.
