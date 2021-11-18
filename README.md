@@ -48,9 +48,9 @@ does exactly that, and this repo makes use of that
     - `AUTH_TYPE` set to `none`
     - `HW_VALIDATOR_REQUIREMENTS` can optionally be modified if your swarm machine has less RAM then is required by default
 3. On the swarm machine, install the packages in `requirements.txt` and make sure you have `kubectl` and `oc` binaries in your `PATH`.
-   You also need to point your kubectl/oc to the cluster the assisted service is running on.
 4. Prepare a test plan - see `testplan.example.yaml`
 5. Prepare a service config file - see `service_config.example.yaml`
-6. Use sudo to run `./main.py`, for example, to run with the example configurations and `KUBECONFIG` at `/path/to/kubeconfig`, run:
+6. Install `requirements.txt` - `python3 -m pip install -r requirements.txt`
+7. Use sudo to run `./main.py`, for example, to run with the example configurations and `KUBECONFIG` at `/path/to/kubeconfig`, run:
 
 `sudo KUBECONFIG=/path/to/kubeconfig ./main.py 200 testplan.example.yaml service_config.example.yaml`
