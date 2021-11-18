@@ -65,6 +65,9 @@ class Swarm(RetryingStateMachine):
                     "Creating clusterrolebinding": self.create_cluserrolebinding,
                     "Retrieving service account credentials": self.retrieve_serviceaccount_credentials,
                     "Getting image urls from service": self.get_image_urls_from_service,
+                    "Getting service CA cert": self.get_service_ca_cert,
+                    "Creating dummy .bootkube.done": self.create_bootkube_done,
+                    "Creating dummy master.ign": self.create_master_ign,
                     "Createing tmpfs": self.create_tmpfs,
                     "Creating shared container image storage": self.create_shared_container_image_storage,
                     "Pre-caching service images": self.precache_service_images,
@@ -77,6 +80,24 @@ class Swarm(RetryingStateMachine):
             logging=self.logging,
             name=f"Swarm",
         )
+
+    @staticmethod
+    def create_dummy_file(path: Path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.touch()
+
+    def get_service_ca_cert(self, next_state):
+        # TODO: Get the real service CA cert 
+        self.create_dummy_file(Path("/etc/assisted-service/service-ca-cert.crt"))
+        return next_state
+
+    def create_bootkube_done(self, next_state):
+        self.create_dummy_file(Path("/opt/openshift/.bootkube.done"))
+        return next_state
+
+    def create_master_ign(self, next_state):
+        self.create_dummy_file(Path("/opt/openshift/master.ign"))
+        return next_state
 
     def validate_system_podman_lock_config(self, next_state):
         with ContainerConfigWithEnvAndNumLocks(
