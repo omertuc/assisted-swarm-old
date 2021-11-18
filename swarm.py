@@ -88,7 +88,7 @@ class Swarm(RetryingStateMachine):
         ) as container_config:
             self.logging.info(f"Validating system podman lock config")
             podman_env = {"CONTAINERS_CONF": str(container_config)}
-            podman_command = self.executor.prepare_sudo_command(["podman", "ps"], env=podman_env)
+            podman_command = self.executor.prepare_sudo_command(["podman", "run", "alpine"], env=podman_env)
 
             try:
                 self.executor.check_call(podman_command, env={**os.environ, **podman_env})
