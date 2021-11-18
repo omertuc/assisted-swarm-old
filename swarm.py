@@ -274,24 +274,34 @@ class Swarm(RetryingStateMachine):
             self.shared_graphroot,
             prefix="agent_binary_retrieval_container_storage_config_",
         ) as shared_graphroot_conf:
-            podman_command = [
-                "podman",
-                "run",
-                "--privileged",
-                "--rm",
-                "-v",
-                f"{agent_binary_dir}:/hostbin",
-                self.service_image_urls["discovery-agent"],
-                "cp",
-                "/usr/bin/agent",
-                "/hostbin",
-            ]
-            podman_command_env = {"CONTAINERS_STORAGE_CONF": shared_graphroot_conf}
+            with ContainerConfigWithEnvAndNumLocks(
+                system_container_config,
+                env=[],
+                num_locks=num_locks,
+                dir=self.swarm_dir,
+                prefix="precache_container_config_",
+            ) as container_config:
+                podman_command = [
+                    "podman",
+                    "run",
+                    "--privileged",
+                    "--rm",
+                    "-v",
+                    f"{agent_binary_dir}:/hostbin",
+                    self.service_image_urls["discovery-agent"],
+                    "cp",
+                    "/usr/bin/agent",
+                    "/hostbin",
+                ]
+                podman_command_env = {
+                    "CONTAINERS_STORAGE_CONF": str(shared_graphroot_conf),
+                    "CONTAINERS_CONF": str(container_config),
+                }
 
-            self.executor.check_call(
-                self.executor.prepare_sudo_command(podman_command, podman_command_env),
-                env={**os.environ, **podman_command_env},
-            )
+                self.executor.check_call(
+                    self.executor.prepare_sudo_command(podman_command, podman_command_env),
+                    env={**os.environ, **podman_command_env},
+                )
 
         self.agent_bin = agent_binary_dir / "agent"
         return next_state
