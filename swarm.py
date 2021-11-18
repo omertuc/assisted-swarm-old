@@ -137,19 +137,29 @@ class Swarm(RetryingStateMachine):
             system_container_storage_config,
             self.shared_graphroot,
             dir=self.swarm_dir,
-            prefix="precache_container_config_",
+            prefix="precache_container_storage_config_",
         ) as shared_graphroot_conf:
-            for image, url in self.service_image_urls.items():
-                if image in images_to_precache:
-                    self.logging.info(f"Pre-caching {image} image")
+            with ContainerConfigWithEnvAndNumLocks(
+                system_container_config,
+                env=[],
+                num_locks=num_locks,
+                dir=self.swarm_dir,
+                prefix="precache_container_config_",
+            ) as container_config:
+                for image, url in self.service_image_urls.items():
+                    if image in images_to_precache:
+                        self.logging.info(f"Pre-caching {image} image")
 
-                    pull_command = ["podman", "pull", url]
-                    pull_command_env = {"CONTAINERS_STORAGE_CONF": shared_graphroot_conf}
+                        pull_command = ["podman", "pull", url]
+                        pull_command_env = {
+                            "CONTAINERS_STORAGE_CONF": str(shared_graphroot_conf),
+                            "CONTAINERS_CONF": str(container_config),
+                        }
 
-                    self.executor.check_call(
-                        self.executor.prepare_sudo_command(pull_command, pull_command_env),
-                        env={**os.environ, **pull_command_env},
-                    )
+                        self.executor.check_call(
+                            self.executor.prepare_sudo_command(pull_command, pull_command_env),
+                            env={**os.environ, **pull_command_env},
+                        )
 
         return next_state
 
