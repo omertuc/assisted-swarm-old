@@ -82,7 +82,7 @@ class Agent(RetryingStateMachine, WithContainerConfigs):
                     "Waiting for ISO URL on InfraEnv": self.wait_iso_url_infraenv,
                     'Seting BMH provisioning state to "ready"': self.ready_bmh,
                     "Waiting for ISO URL on BMH": self.wait_iso_url_bmh,
-                    # "Download ISO": self.download_iso,
+                    "Download ISO": self.download_iso,
                     'Seting BMH provisioning state to "provisioned"': self.provisioned_bmh,
                     "Generating container configurations": self.create_container_configs,
                     "Running agent": self.run_agent,
