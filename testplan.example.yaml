@@ -15,3 +15,5 @@ clusters:
   - single_node: false
     num_workers: 0
     amount: 1
+# Run the clusters in the clusters list in random order rather than the listed order
+shuffle: true

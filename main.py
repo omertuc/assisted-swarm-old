@@ -6,6 +6,7 @@ from pathlib import Path
 import logging
 from config import load_config
 from taskpool import TaskPool
+from random import shuffle
 
 from rich.logging import RichHandler
 
@@ -48,6 +49,9 @@ def main(max_concurrent, test_plan, service_config):
 
 def execute_plan(taskpool, test_plan, swarm):
     clusters = [(c["single_node"], c["num_workers"]) for c in test_plan["clusters"] for _ in range(c["amount"])]
+
+    if test_plan.get("shuffle", False):
+        shuffle(clusters)
 
     for cluster_index, (single_node, num_workers) in enumerate(clusters):
         taskpool.submit(swarm.launch_cluster, cluster_index, taskpool, single_node, num_workers)
