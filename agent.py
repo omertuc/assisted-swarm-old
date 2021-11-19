@@ -135,10 +135,7 @@ class Agent(RetryingStateMachine, WithContainerConfigs):
         return next_state
 
     def download_iso(self, next_state):
-        self.swarm_agent_config.executor.check_call(
-            ["curl", "-s", "-o", "/dev/null", self.bmh_iso_url],
-            check=True,
-        )
+        self.swarm_agent_config.executor.check_call(["curl", "-s", "-o", "/dev/null", self.bmh_iso_url])
 
         return next_state
 
