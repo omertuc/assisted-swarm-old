@@ -24,6 +24,8 @@ from agent import SwarmAgentConfig
 from cluster import Cluster, ClusterConfig
 from swarmkubecache import SwarmKubeCache
 
+script_dir = Path(__file__).parent
+
 
 def get_user_cache_dir():
     return Path(
@@ -68,6 +70,7 @@ class Swarm(RetryingStateMachine):
                     "Getting service CA cert": self.get_service_ca_cert,
                     "Creating dummy .bootkube.done": self.create_bootkube_done,
                     "Creating dummy master.ign": self.create_master_ign,
+                    "Copying fake coreos-installer": self.copy_fake_coreos_installer,
                     "Createing tmpfs": self.create_tmpfs,
                     "Creating shared container image storage": self.create_shared_container_image_storage,
                     "Pre-caching service images": self.precache_service_images,
@@ -81,13 +84,17 @@ class Swarm(RetryingStateMachine):
             name=f"Swarm",
         )
 
+    def copy_fake_coreos_installer(self, next_state):
+        self.executor.check_call(["sudo", "cp", script_dir / "dry-installer", "/usr/local/bin/"])
+        return next_state
+
     @staticmethod
     def create_dummy_file(path: Path):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch()
 
     def get_service_ca_cert(self, next_state):
-        # TODO: Get the real service CA cert 
+        # TODO: Get the real service CA cert
         self.create_dummy_file(Path("/etc/assisted-service/service-ca-cert.crt"))
         return next_state
 
