@@ -4,6 +4,7 @@ from collections import OrderedDict
 from pathlib import Path
 import time
 import threading
+from threading import Event
 import logging
 import json
 import subprocess
@@ -379,7 +380,9 @@ class Swarm(RetryingStateMachine):
         self.kube_cache_done.set()
         self.kube_cache_thread.join()
 
-    def launch_cluster(self, index, task_pool, single_node, num_workers):
+    def launch_cluster(
+        self, index, task_pool, single_node, num_workers, can_start_agents: Event, started_all_agents: Event
+    ):
         cluster = Cluster(
             ClusterConfig(
                 logging=self.logging,
@@ -398,6 +401,8 @@ class Swarm(RetryingStateMachine):
                 kube_cache=self.kube_cache,
                 executor=self.executor,
                 shared_graphroot=self.shared_graphroot,
+                can_start_agents=can_start_agents,
+                started_all_agents=started_all_agents,
             ),
             SwarmAgentConfig(
                 agent_binary=self.agent_bin,

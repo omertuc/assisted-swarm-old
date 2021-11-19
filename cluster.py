@@ -14,6 +14,7 @@ from swarmexecutor import SwarmExecutor
 from swarmkubecache import SwarmKubeCache
 from taskpool import TaskPool
 from withcontainerconfigs import WithContainerConfigs
+from threading import Event
 
 
 @dataclass
@@ -34,6 +35,9 @@ class ClusterConfig:
     num_locks: int
     executor: SwarmExecutor
     shared_graphroot: Path
+    can_start_agents: Event
+    started_all_agents: Event
+
 
 
 class Cluster(RetryingStateMachine, WithContainerConfigs):
@@ -182,6 +186,8 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
         return next_state
 
     def launch_agents(self, next_state):
+        self.cluster_config.can_start_agents.wait()
+
         self.agents = [
             Agent(
                 self.swarm_agent_config,
@@ -204,6 +210,8 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
         for agent_index, agent in enumerate(self.agents):
             self.logging.info(f"Launching agent {agent_index}")
             self.agent_tasks.append(self.cluster_config.task_pool.submit(agent.start))
+
+        self.cluster_config.started_all_agents.set()
 
         return next_state
 

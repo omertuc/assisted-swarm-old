@@ -8,6 +8,7 @@ from config import load_config
 from taskpool import TaskPool
 from random import shuffle
 
+from threading import Event
 from rich.logging import RichHandler
 
 logging.basicConfig(
@@ -48,14 +49,50 @@ def main(max_concurrent, test_plan, service_config):
     swarm.finalize()
 
 
-def execute_plan(agents_taskpool, clusters_taskpool, test_plan, swarm):
+def execute_plan(agents_taskpool, clusters_taskpool, test_plan, swarm: Swarm):
     clusters = [(c["single_node"], c["num_workers"]) for c in test_plan["clusters"] for _ in range(c["amount"])]
 
     if test_plan.get("shuffle", False):
         shuffle(clusters)
 
+    # We use a couple of events to allow cluster X to signal to cluster Y that
+    # cluster X has launched all of its agents, and only then cluster Y will
+    # launch its own agents. This allows us to launch clusters in parallel
+    # while still giving a cluster that launched early a priority to launch all
+    # of its agents before any of the clusters that were launched after it.
+    # This prevents a situation where all clusters race to create agent
+    # threads, saturating the thread pool, and as a result the clusters are in
+    # a dead lock because non of them have enough agents to finish the
+    # installation (a finished installation is necessary for agents to die and
+    # make space in the thread pool). This synchronization of events events
+    # makes it so that only a single cluster can have a partial amount of
+    # agents launched. One cluster's "I've launched all of my agents" event is
+    # another cluster's "can start all agents" event.
+
+    # The reason we don't simply launch clusters one after the other is because
+    # before launching agents, a cluster has a lot of work it needs to do, and
+    # there's no reason for that work to be delayed. That mostly includes
+    # creating CR's and waiting for the service to reconcile them.
+
+    # Create an initial "dummy" event that is immediately set for the first cluster
+    # since it doesn't have any cluster it needs to wait for.
+    previous_cluster_started_all_agents = Event()
+    previous_cluster_started_all_agents.set()
+
     for cluster_index, (single_node, num_workers) in enumerate(clusters):
-        clusters_taskpool.submit(swarm.launch_cluster, cluster_index, agents_taskpool, single_node, num_workers)
+        current_cluster_all_agents_started = Event()
+
+        clusters_taskpool.submit(
+            swarm.launch_cluster,
+            cluster_index,
+            agents_taskpool,
+            single_node,
+            num_workers,
+            can_start_all_agents=previous_cluster_started_all_agents,
+            all_agents_started=current_cluster_all_agents_started,
+        )
+
+        previous_cluster_started_all_agents = current_cluster_all_agents_started
 
     clusters_taskpool.wait()
     agents_taskpool.wait()
