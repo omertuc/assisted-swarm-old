@@ -80,7 +80,7 @@ def execute_plan(agents_taskpool, clusters_taskpool, test_plan, swarm: Swarm):
     previous_cluster_started_all_agents.set()
 
     for cluster_index, (single_node, num_workers) in enumerate(clusters):
-        current_cluster_all_agents_started = Event()
+        current_cluster_started_all_agents = Event()
 
         clusters_taskpool.submit(
             swarm.launch_cluster,
@@ -89,10 +89,10 @@ def execute_plan(agents_taskpool, clusters_taskpool, test_plan, swarm: Swarm):
             single_node,
             num_workers,
             can_start_agents=previous_cluster_started_all_agents,
-            all_agents_started=current_cluster_all_agents_started,
+            started_all_agents=current_cluster_started_all_agents,
         )
 
-        previous_cluster_started_all_agents = current_cluster_all_agents_started
+        previous_cluster_started_all_agents = current_cluster_started_all_agents
 
     clusters_taskpool.wait()
     agents_taskpool.wait()
