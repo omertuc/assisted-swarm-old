@@ -88,7 +88,7 @@ def execute_plan(agents_taskpool, clusters_taskpool, test_plan, swarm: Swarm):
             agents_taskpool,
             single_node,
             num_workers,
-            can_start_all_agents=previous_cluster_started_all_agents,
+            can_start_agents=previous_cluster_started_all_agents,
             all_agents_started=current_cluster_all_agents_started,
         )
 
