@@ -7,15 +7,15 @@ exit 0
 pushd assisted-swarm
 sudo KUBECONFIG=/root/kubeconfig ./main.py 200 testplan.example.yaml service_config.example.yaml
 
-# Delete all namespaces
-export KUBECONFIG=/root/kubeconfig
-oc get namespace -A -ojson | jq '.items[] | select(.metadata.name | test("swarm"))' | oc delete -f -
-
 # Download agent logs
 oc get agents -A -ojson | jq '.items[].metadata | select(.namespace | test("swarm-")).name' -r | xargs -I@ sh -c "sudo journalctl DRY_AGENT_ID=@ > @.logs"
 
 # Show all installer logs
 oc get agents -A -ojson | jq '.items[].metadata | select(.namespace | test("swarm-")).name' -r | xargs -I@ sh -c "echo @ && cat /var/log/assisted-installer-@.log | tail -1"
+
+# Delete all namespaces
+export KUBECONFIG=/root/kubeconfig
+oc get namespace -A -ojson | jq '.items[] | select(.metadata.name | test("swarm"))' | oc delete -f -
 
 # Kill all processes
 killall agent
@@ -24,3 +24,10 @@ pgrep next_step_runner -f | xargs kill -9
 
 # Delete mounts
 findmnt --json --list | jq '.filesystems[].target | select(test("/root/.cache/swarm"))' -r | xargs -L1 umount
+findmnt --json --list | jq '.filesystems[].target | select(test("/root/.cache/swarm"))' -r | xargs -L1 umount
+findmnt --json --list | jq '.filesystems[].target | select(test("/root/.cache/swarm"))' -r | xargs -L1 umount
+findmnt --json --list | jq '.filesystems[].target | select(test("/root/.cache/swarm"))' -r | xargs -L1 umount
+
+# Cleanup
+rm -rf /var/log/assisted-installer-*.log
+rm -rf /root/mtab-*
