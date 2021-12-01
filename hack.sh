@@ -1,4 +1,5 @@
 # You're not supposed to run this as a script
+
 exit 0
 
 # A collection of utility functions for working with the swarm
@@ -31,3 +32,27 @@ findmnt --json --list | jq '.filesystems[].target | select(test("/root/.cache/sw
 # Cleanup
 rm -rf /var/log/assisted-installer-*.log
 rm -rf /root/mtab-*
+
+# Prometheus instance
+docker run \
+    --net host \
+    -p 9090:9090 \
+    -v $PWD/prometheus.yml:/etc/prometheus/prometheus.yml \
+    prom/prometheus
+
+# Prometheus prometheus.yml
+"
+global:
+  scrape_interval: 5s 
+
+scrape_configs:
+  - job_name: 'swarm'
+    static_configs:
+      - targets: ['localhost:9100']
+  - job_name: 'ai'
+    scheme: https
+    static_configs:
+      - targets: ['assisted-service-open-cluster-management.apps.jetlag-ibm0.performance-scale.cloud:443']
+    tls_config:
+      insecure_skip_verify: true
+"
