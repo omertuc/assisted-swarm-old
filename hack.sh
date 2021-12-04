@@ -34,6 +34,7 @@ findmnt --json --list | jq '.filesystems[].target | select(test("/root/.cache/sw
 # Cleanup
 rm -rf /var/log/assisted-installer-*.log
 rm -rf /root/mtab-*
+rm -rf /root/.cache/swarm/swarm-*
 
 # Prometheus instance
 docker run \
