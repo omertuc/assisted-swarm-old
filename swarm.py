@@ -86,7 +86,7 @@ class Swarm(RetryingStateMachine):
         )
 
     def copy_fake_coreos_installer(self, next_state):
-        self.executor.check_call(["sudo", "cp", script_dir / "dry-installer", "/usr/local/bin/"])
+        self.executor.check_call(["sudo", "cp", str(script_dir / "dry-installer"), "/usr/local/bin/"])
         return next_state
 
     @staticmethod

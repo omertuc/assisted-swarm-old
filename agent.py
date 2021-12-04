@@ -4,6 +4,8 @@ import re
 import requests
 import subprocess
 import uuid
+import json
+import tempfile
 from pathlib import Path
 from typing import List
 
@@ -59,8 +61,9 @@ class ClusterAgentConfig:
     machine_ip: str
     cluster_identifier: str
     cluster_dir: Path
-    cluster_hostnames: List[str]
-    cluster_ips: List[str]
+    cluster_hosts: List[dict]
+    agent_dir: Path
+    fake_reboot_marker_path: Path
 
 
 class Agent(RetryingStateMachine, WithContainerConfigs):
@@ -96,18 +99,13 @@ class Agent(RetryingStateMachine, WithContainerConfigs):
         self.swarm_agent_config = swarm_agent_config
         self.cluster_agent_config = cluster_agent_config
 
-        # Identifiers
         self.host_id = str(uuid.uuid4())
         self.identifier = cluster_agent_config.identifier
-
-        # Utils
         self.logging = logging
 
-        # Directories
-        self.agent_dir = self.cluster_agent_config.cluster_dir / f"agent-{cluster_agent_config.index}"
-
-        # General paths
-        self.fake_reboot_marker_path = self.agent_dir / "fake_reboot_marker"
+        # Aliases
+        self.agent_dir = self.cluster_agent_config.agent_dir
+        self.fake_reboot_marker_path = self.cluster_agent_config.fake_reboot_marker_path
 
         # Container config
         self.personal_graphroot = self.agent_dir / "graphroot"
@@ -135,7 +133,9 @@ class Agent(RetryingStateMachine, WithContainerConfigs):
         return next_state
 
     def download_iso(self, next_state):
-        self.swarm_agent_config.executor.check_call(["curl", "--insecure", "--silent", "--show-error", "--output", "/dev/null", self.bmh_iso_url])
+        self.swarm_agent_config.executor.check_call(
+            ["curl", "--insecure", "--silent", "--show-error", "--output", "/dev/null", self.bmh_iso_url]
+        )
 
         return next_state
 
@@ -240,6 +240,12 @@ class Agent(RetryingStateMachine, WithContainerConfigs):
         return self.state
 
     def run_agent(self, next_state):
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, dir=self.agent_dir, prefix="controller_cluster_hosts_"
+        ) as cluster_hosts_file:
+            cluster_hosts_file.write(json.dumps(self.cluster_agent_config.cluster_hosts))
+            cluster_hosts_file_path = cluster_hosts_file.name
+
         agent_environment = {
             "CONTAINERS_CONF": str(self.container_config),
             "CONTAINERS_STORAGE_CONF": str(self.container_storage_conf),
@@ -250,8 +256,7 @@ class Agent(RetryingStateMachine, WithContainerConfigs):
             "DRY_FAKE_REBOOT_MARKER_PATH": str(self.fake_reboot_marker_path),
             "DRY_FORCED_HOSTNAME": self.cluster_agent_config.machine_hostname,
             # The installer needs to know all the hostnames in the cluster
-            "DRY_HOSTNAMES": ",".join(self.cluster_agent_config.cluster_hostnames),
-            "DRY_IPS": ",".join(ip.split("/")[0] for ip in self.cluster_agent_config.cluster_ips),
+            "DRY_CLUSTER_HOSTS_PATH": cluster_hosts_file_path,
             "DRY_FORCED_HOST_IPV4": self.cluster_agent_config.machine_ip,
         }
 

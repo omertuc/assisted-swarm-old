@@ -3,6 +3,8 @@ import base64
 import jinja2
 import logging
 import subprocess
+import json
+import tempfile
 from pathlib import Path
 from collections import OrderedDict
 
@@ -38,7 +40,6 @@ class ClusterConfig:
     can_start_agents: Event
     started_all_agents: Event
     with_nmstate: bool
-
 
 
 class Cluster(RetryingStateMachine, WithContainerConfigs):
@@ -95,13 +96,29 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
 
         self.logging = logging
 
-    @property
-    def agent_ips(self):
-        return [f"10.123.{i >> 8}.{i & 0xff}/16" for i in range(1, self.total_agents + 1)]
+    def agent_directory(self, agent_index):
+        return self.cluster_dir / f"agent-{agent_index}"
+
+    def agent_ip(self, agent_index):
+        ip_index = agent_index + 1
+        return f"10.123.{ip_index >> 8}.{ip_index & 0xff}/16"
+
+    def hostname(self, agent_index):
+        return f"{self.identifier}-{agent_index}"
+
+    def dry_reboot_marker(self, agent_index):
+        return Path("/var/log") / f"{self.identifier}-{agent_index}-cluster_fake_reboot_marker"
 
     @property
-    def hostnames(self):
-        return [f"{self.identifier}-{agent_index}" for agent_index in range(self.total_agents)]
+    def cluster_hosts(self):
+        return [
+            {
+                "hostname": self.hostname(agent_index),
+                "ip": self.agent_ip(agent_index),
+                "rebootMarkerPath": str(self.dry_reboot_marker(agent_index)),
+            }
+            for agent_index in range(self.total_agents)
+        ]
 
     @property
     def total_agents(self):
@@ -200,13 +217,14 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
                 ClusterAgentConfig(
                     index=agent_index,
                     mac_address=self.make_mac(self.cluster_config.index, agent_index),
-                    machine_ip=self.agent_ips[agent_index],
-                    machine_hostname=self.hostnames[agent_index],
+                    machine_ip=self.agent_ip(agent_index),
+                    machine_hostname=self.hostname(agent_index),
                     cluster_identifier=self.identifier,
                     cluster_dir=self.cluster_dir,
                     identifier=f"{self.identifier}-{agent_index}",
-                    cluster_hostnames=self.hostnames,
-                    cluster_ips=self.agent_ips,
+                    cluster_hosts=self.cluster_hosts,
+                    agent_dir=self.agent_directory(agent_index),
+                    fake_reboot_marker_path=self.dry_reboot_marker(agent_index),
                 ),
             )
             for agent_index in range(self.total_agents)
@@ -230,6 +248,12 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
         # Arbitrarily choose the first agent's reboot marker path as a signal for the controller that it should start
         fake_reboot_marker_path = self.agents[0].fake_reboot_marker_path
 
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, dir=self.cluster_dir, prefix="controller_cluster_hosts_"
+        ) as cluster_hosts_file:
+            cluster_hosts_file.write(json.dumps(self.cluster_hosts))
+            cluster_hosts_file_path = cluster_hosts_file.name
+
         controller_environment = {
             "CLUSTER_ID": self.infra_id,
             "DRY_ENABLE": "true",
@@ -240,16 +264,17 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
             "SKIP_CERT_VERIFICATION": "true",
             "HIGH_AVAILABILITY_MODE": "false",
             "CHECK_CLUSTER_VERSION": "true",
-            "DRY_HOSTNAMES": ",".join(self.hostnames),
-            "DRY_MCS_ACCESS_IPS": ",".join(ip.split("/")[0] for ip in self.agent_ips),
+            "DRY_CLUSTER_HOSTS_PATH": cluster_hosts_file_path,
         }
 
-        controller_mounts = {str(self.cluster_config.storage_dir): str(self.cluster_config.storage_dir)}
+        controller_mounts = {str(fake_reboot_marker_path.parent): str(fake_reboot_marker_path.parent)}
 
         podman_command = [
             "podman",
             "run",
             "--net=host",
+            "--pid=host",
+            "--privileged",
             "-it",
             *(f"-e={var}={value}" for var, value in controller_environment.items()),
             *(f"-v={host_path}:{container_path}" for host_path, container_path in controller_mounts.items()),
