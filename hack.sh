@@ -9,9 +9,11 @@ pushd assisted-swarm
 sudo KUBECONFIG=/root/kubeconfig ./main.py 200 testplan.example.yaml service_config.example.yaml
 
 # Download agent logs
+export KUBECONFIG=/root/kubeconfig
 oc get agents -A -ojson | jq '.items[].metadata | select(.namespace | test("swarm-")).name' -r | xargs -I@ sh -c "sudo journalctl DRY_AGENT_ID=@ > @.logs"
 
 # Show all installer logs
+export KUBECONFIG=/root/kubeconfig
 oc get agents -A -ojson | jq '.items[].metadata | select(.namespace | test("swarm-")).name' -r | xargs -I@ sh -c "echo @ && cat /var/log/assisted-installer-@.log | tail -1"
 
 # Delete all namespaces

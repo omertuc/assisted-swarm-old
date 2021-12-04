@@ -30,4 +30,9 @@ class SwarmExecutor:
 
     def check_output(self, *args, **kwargs) -> bytes:
         self.log_cmd(*args, **kwargs)
-        return subprocess.check_output(*args, **kwargs)
+        output = subprocess.check_output(*args, **kwargs)
+
+        if type(output) is bytes:
+            return output
+        else:
+            return output.encode('utf-8')
