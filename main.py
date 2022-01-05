@@ -50,7 +50,7 @@ def main(max_concurrent, test_plan, service_config):
 
 
 def execute_plan(agents_taskpool, clusters_taskpool, test_plan, swarm: Swarm):
-    clusters = [(c["single_node"], c["num_workers"]) for c in test_plan["clusters"] for _ in range(c["amount"])]
+    clusters = [(c["single_node"], c["num_workers"], c["with_nmstate"]) for c in test_plan["clusters"] for _ in range(c["amount"])]
 
     if test_plan.get("shuffle", False):
         shuffle(clusters)
@@ -79,7 +79,7 @@ def execute_plan(agents_taskpool, clusters_taskpool, test_plan, swarm: Swarm):
     previous_cluster_started_all_agents = Event()
     previous_cluster_started_all_agents.set()
 
-    for cluster_index, (single_node, num_workers) in enumerate(clusters):
+    for cluster_index, (single_node, num_workers, with_nmstate) in enumerate(clusters):
         current_cluster_started_all_agents = Event()
 
         clusters_taskpool.submit(
@@ -88,6 +88,7 @@ def execute_plan(agents_taskpool, clusters_taskpool, test_plan, swarm: Swarm):
             agents_taskpool,
             single_node,
             num_workers,
+            with_nmstate,
             can_start_agents=previous_cluster_started_all_agents,
             started_all_agents=current_cluster_started_all_agents,
         )

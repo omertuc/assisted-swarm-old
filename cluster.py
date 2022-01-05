@@ -37,6 +37,7 @@ class ClusterConfig:
     shared_graphroot: Path
     can_start_agents: Event
     started_all_agents: Event
+    with_nmstate: bool
 
 
 
@@ -129,9 +130,15 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
             "agentclusterinstall",
             "clusterdeployment",
             "clusterimageset",
-            "infraenv",
             "secret_pull",
         )
+
+        # Another option was to have this if as part of the infraenv j2 template
+        # but for simplicity of understanding the flow I preffered to place it here
+        if self.cluster_config.with_nmstate:
+            per_cluster_manifets += ("nmstate", "infraenv_nmstate")
+        else:
+            per_cluster_manifets += ("infraenv",)
 
         per_agent_manifests = (
             "baremetalhost",
@@ -171,7 +178,6 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
 
         with open(self.manifest_dir / "manifests.yaml", "w") as f:
             f.write(self.manifests)
-
         return next_state
 
     def apply_manifests(self, next_state):

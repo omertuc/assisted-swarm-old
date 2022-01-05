@@ -2,18 +2,22 @@ clusters:
   # Run 2 single node clusters
   - single_node: true
     num_workers: 0
+    with_nmstate: true
     amount: 2
   # Run a single 3-control-plane 3-worker cluster
   - single_node: false
     num_workers: 3
+    with_nmstate: false
     amount: 1
   # Run 2 3-control-plane 10-worker clusters
   - single_node: false
     num_workers: 10
+    with_nmstate: true
     amount: 2
   # Run a single compact cluster
   - single_node: false
     num_workers: 0
+    with_nmstate: true
     amount: 1
 # Run the clusters in the clusters list in random order rather than the listed order
 shuffle: true
