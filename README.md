@@ -48,11 +48,12 @@ does exactly that, and this repo makes use of that
     - `AUTH_TYPE` set to `none`
     - `SKIP_CERT_VERIFICATION` set to `"false"`
     - `HW_VALIDATOR_REQUIREMENTS` can optionally be modified if your swarm machine has less RAM then is required by default
-3. Scale the bare metal operator to `0` or otherwise it would conflict with the BMH simulation performed by the swarm
-4. On the swarm machine, install the packages in `requirements.txt` and make sure you have `kubectl` and `oc` binaries in your `PATH`.
-5. Prepare a test plan - see `testplan.example.yaml`
-6. Prepare a service config file - see `service_config.example.yaml`
-7. Install `requirements.txt` - `python3 -m pip install -r requirements.txt`
-8. Use sudo to run `./main.py`, for example, to run with the example configurations and `KUBECONFIG` at `/path/to/kubeconfig`, run:
+3. Scale the bare metal operator deployment to `0`, otherwise it would conflict with the BMH simulation performed by the swarm
+4. Scale the metal3 deployment to `0`, otherwise it would conflict with the BMH simulation performed by the swarm
+5. On the swarm machine, install the packages in `requirements.txt` and make sure you have `kubectl` and `oc` binaries in your `PATH`.
+6. Prepare a test plan - see `testplan.example.yaml`
+7. Prepare a service config file - see `service_config.example.yaml`
+8. Install `requirements.txt` - `python3 -m pip install -r requirements.txt`
+9. Use sudo to run `./main.py`, for example, to run with the example configurations and `KUBECONFIG` at `/path/to/kubeconfig`, run:
 
 `sudo KUBECONFIG=/path/to/kubeconfig ./main.py 200 testplan.example.yaml service_config.example.yaml`
