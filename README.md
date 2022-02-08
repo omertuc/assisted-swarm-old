@@ -53,7 +53,8 @@ does exactly that, and this repo makes use of that
 5. Prepare a test plan - see `testplan.example.yaml`
 6. Prepare a service config file - see `service_config.example.yaml`
 7. Install `requirements.txt` - `python3 -m pip install -r requirements.txt`
-8. Use sudo to run `./main.py`, for example, to run with the example configurations and `KUBECONFIG` at `/path/to/kubeconfig`, run:
+8. Ensure you're using a fairly modern version of podman (3.4 or later)
+9. Use sudo to run `./main.py`, for example, to run with the example configurations and `KUBECONFIG` at `/path/to/kubeconfig`, run:
 
 `sudo KUBECONFIG=/path/to/kubeconfig ./main.py 200 testplan.example.yaml service_config.example.yaml`
 
