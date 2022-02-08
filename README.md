@@ -46,7 +46,7 @@ does exactly that, and this repo makes use of that
 1. Launch a kube-api assisted service on your cluster. This part is up to you. Make sure the service is accessible from the machine running the swarm.
 2. Configure the service -
     - `AUTH_TYPE` set to `none`
-    - `SKIP_CERT_VERIFICATION` set to `"false"`
+    - `SKIP_CERT_VERIFICATION` set to `"true"`
     - `HW_VALIDATOR_REQUIREMENTS` can optionally be modified if your swarm machine has less RAM then is required by default
 3. See "Getting rid of CBO on OpenShift section below"
 4. On the swarm machine, install the packages in `requirements.txt` and make sure you have `kubectl` and `oc` binaries in your `PATH`.
