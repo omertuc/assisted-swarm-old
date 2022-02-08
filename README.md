@@ -47,7 +47,7 @@ does exactly that, and this repo makes use of that
 2. Configure the service -
     - `AUTH_TYPE` set to `none`
     - `SKIP_CERT_VERIFICATION` set to `"true"`
-    - `HW_VALIDATOR_REQUIREMENTS` can optionally be modified if your swarm machine has less RAM then is required by default
+    - `HW_VALIDATOR_REQUIREMENTS` can optionally be modified if your swarm machine has less RAM/Storage then is required by default
 3. See "Getting rid of CBO on OpenShift section below"
 4. On the swarm machine, install the packages in `requirements.txt` and make sure you have `kubectl` and `oc` binaries in your `PATH`.
 5. Prepare a test plan - see `testplan.example.yaml`
