@@ -242,7 +242,7 @@ class Agent(RetryingStateMachine, WithContainerConfigs):
     def run_agent(self, next_state):
         # We place the hosts file under /var/log because it's mounted for the installer
         with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, dir=Path("/var/log"), prefix="controller_cluster_hosts_"
+            mode="w", delete=False, dir=Path("/var/log"), prefix="agent_cluster_hosts_"
         ) as cluster_hosts_file:
             cluster_hosts_file.write(json.dumps(self.cluster_agent_config.cluster_hosts))
             cluster_hosts_file_path = cluster_hosts_file.name
