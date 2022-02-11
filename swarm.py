@@ -203,8 +203,7 @@ class Swarm(RetryingStateMachine):
                 "create",
                 "serviceaccount",
                 self.identifier,
-                "-n",
-                "default",
+                "--namespace=default",
             ]
         )
 
@@ -256,6 +255,7 @@ class Swarm(RetryingStateMachine):
                 "kubectl",
                 "get",
                 "secret",
+                "--namespace=default",
                 secret_name,
                 "-ojson",
             ]
