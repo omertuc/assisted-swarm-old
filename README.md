@@ -86,3 +86,8 @@ $ oc scale deployment/cluster-baremetal-operator -n openshift-machine-api --repl
 ```bash
 $ oc scale deployment/metal3 -n openshift-machine-api --replicas=0
 ```
+
+4. Remove baremetal-operator webhook
+```bash
+$ oc delete validatingwebhookconfiguration baremetal-operator-validating-webhook-configuration
+```
