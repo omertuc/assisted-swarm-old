@@ -6,3 +6,6 @@ ssh_pub_key: "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNT
 
 # A path to the file containing your pull secret, you can get yours from https://cloud.redhat.com/openshift/install/pull-secret
 pull_secret_file: "/home/omer/omer-ps"
+
+# Swarm cluster release image
+release_image: "quay.io/openshift-release-dev/ocp-release:4.9.7-x86_64"
