@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import plac
+import sys
 from swarm import Swarm
 from pathlib import Path
 import logging
@@ -104,3 +105,4 @@ if __name__ == "__main__":
         plac.call(main)
     except Exception as e:
         logging.exception(e)
+        sys.exit(1)
