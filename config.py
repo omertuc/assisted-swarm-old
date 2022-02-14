@@ -49,6 +49,10 @@ def load_config(service_config, test_plan):
     with open(service_config["pull_secret_file"], "r") as f:
         pull_secret = f.read().strip()
 
+        # Remove all unnecessary whitespace from JSON so it goes more smoothly
+        # through HTTP headers
+        pull_secret = json.dumps(json.loads(pull_secret), separators=(",", ":"))
+
     with open(test_plan, "r") as f:
         test_plan = yaml.safe_load(f)
 
