@@ -42,9 +42,10 @@ bad_lock_return_code = 125
 
 
 class Swarm(RetryingStateMachine):
-    def __init__(self, pull_secret, service_url, ssh_pub_key):
+    def __init__(self, pull_secret, pull_secret_file, service_url, ssh_pub_key):
         self.ssh_pub_key = ssh_pub_key
         self.pull_secret = pull_secret
+        self.pull_secret_file = pull_secret_file
         self.service_url = service_url
         self.logging = logging.getLogger("swarm")
         self.executor = SwarmExecutor(self.logging)
@@ -179,7 +180,7 @@ class Swarm(RetryingStateMachine):
                     if image in images_to_precache:
                         self.logging.info(f"Pre-caching {image} image")
 
-                        pull_command = ["podman", "pull", url]
+                        pull_command = ["podman", "pull", "--authfile", self.pull_secret_file, url]
                         pull_command_env = {
                             "CONTAINERS_STORAGE_CONF": str(shared_graphroot_conf),
                             "CONTAINERS_CONF": str(container_config),
