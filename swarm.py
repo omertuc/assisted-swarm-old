@@ -42,11 +42,12 @@ bad_lock_return_code = 125
 
 
 class Swarm(RetryingStateMachine):
-    def __init__(self, pull_secret, pull_secret_file, service_url, ssh_pub_key):
+    def __init__(self, pull_secret, pull_secret_file, service_url, release_image, ssh_pub_key):
         self.ssh_pub_key = ssh_pub_key
         self.pull_secret = pull_secret
         self.pull_secret_file = pull_secret_file
         self.service_url = service_url
+        self.release_image = release_image
         self.logging = logging.getLogger("swarm")
         self.executor = SwarmExecutor(self.logging)
 
@@ -396,7 +397,7 @@ class Swarm(RetryingStateMachine):
                 task_pool=task_pool,
                 controller_image_path=self.service_image_urls["assisted-installer-controller"],
                 index=index,
-                release_image="quay.io/openshift-release-dev/ocp-release:4.9.7-x86_64",
+                release_image=self.release_image,
                 swarm_identifier=self.identifier,
                 num_locks=num_locks,
                 service_url=self.service_url,
