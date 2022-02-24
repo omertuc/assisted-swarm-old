@@ -98,7 +98,7 @@ def execute_plan(agents_taskpool: TaskPool, clusters_taskpool: TaskPool, test_pl
         clusters_taskpool.submit(
             swarm.launch_cluster,
             index=cluster_index,
-            taskpool=agents_taskpool,
+            task_pool=agents_taskpool,
             single_node=single_node,
             num_workers=num_workers,
             with_nmstate=with_nmstate,
