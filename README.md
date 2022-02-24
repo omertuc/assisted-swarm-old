@@ -40,7 +40,6 @@ does exactly that, and this repo makes use of that
 # Architecture
 
 ![Alt text](./docs/swarm.svg)
-<img src="./docs/swarm.svg">
 
 # TODO
 - [ ] Run with auth enabled (load testing without auth is a bit unfair - I presume it adds a lot of CPU usage)
