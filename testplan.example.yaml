@@ -60,7 +60,7 @@ schema:
             default: false
           just_infraenv:
             type: boolean
-            description: Whether to create an actual cluster or just populate an infraenv with the cluster's hosts. Note that hosts stuck in an infraenv never finish installation and make space for more hosts.
+            description: Whether to create an actual cluster or just populate an infraenv with the cluster's hosts. Note that hosts stuck in an infraenv never finish installation and never make space for more hosts.
             default: false
           infraenv_labels:
             type: object
