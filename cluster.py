@@ -17,6 +17,7 @@ from swarmkubecache import SwarmKubeCache
 from taskpool import TaskPool
 from withcontainerconfigs import WithContainerConfigs
 from threading import Event
+from typing import Dict
 
 
 @dataclass
@@ -41,7 +42,7 @@ class ClusterConfig:
     started_all_agents: Event
     with_nmstate: bool
     just_infraenv: bool
-    infraenv_labels: dict[str, str]
+    infraenv_labels: Dict[str, str]
 
 
 class Cluster(RetryingStateMachine, WithContainerConfigs):
