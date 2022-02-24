@@ -152,7 +152,7 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
         if not self.cluster_config.just_infraenv:
             per_cluster_manifests.extend(
                 (
-                    "clustermetadata",
+                    "agentclusterinstall",
                     "clusterdeployment",
                     "clusterimageset",
                 )
