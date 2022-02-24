@@ -1,24 +1,72 @@
+# See the schema at the bottom of this file for a formal definition of its structure
 clusters:
-  # Run 2 single node clusters
+  # Run 2 single-node clusters
   - single_node: true
     num_workers: 0
     amount: 2
+
   # Run a single 3-control-plane 3-worker cluster
   - single_node: false
     num_workers: 3
     amount: 1
+
   # Run 2 3-control-plane 10-worker clusters on the Sun
   - single_node: false
     num_workers: 10
     amount: 2
     infranev_labels:
       agentclusterinstalls.extensions.hive.openshift.io/location: Sun
-  # Run a single compact cluster on the moon
+
+  # Run a single compact cluster infraenv on the moon with nmstate, but don't bind to any cluster
   - single_node: false
     num_workers: 0
     with_nmstate: true
+    just_infraenv: true
     infranev_labels:
       agentclusterinstalls.extensions.hive.openshift.io/location: Moon
     amount: 1
 # Run the clusters in the clusters list in random order rather than the listed order
 shuffle: true
+# -------------- End of user configuration --------------
+
+# -------------- Configuration Schema -------------------
+schema:
+  properties:
+    required:
+      - clusters
+      - shuffle
+  clusters:
+    type: array
+    description: An ordered list of cluster configurations along with how many clusters to launch from each configuration
+    items:
+      type: object
+      required:
+        - single_node
+        - num_workers
+        - amount
+      properties:
+        single_node:
+          type: boolean
+          description: Whether the cluster is a single control-plane node cluster or not
+        num_workers:
+          type: boolean
+          description: How many worker nodes the cluster should have. For now, must be 0 for single node clusters
+        amount:
+          type: integer
+          description: How many clusters with this configuration should be launched
+        with_nmstate:
+          type: boolean
+          description: Whether to fake an "nmstate" configuration for this cluster, to get the service busy generating nmconnection files
+          default: false
+        just_infraenv:
+          type: boolean
+          description: Whether to create an actual cluster or just populate an infraenv with the cluster's hosts. Note that hosts stuck in an infraenv never finish installation and make space for more hosts.
+          default: false
+        infraenv_labels:
+          type: object
+          description: Labels that should be added to the infraenv created for this cluster
+          additionalProperties:
+            type: string
+  shuffle:
+    type: boolean
+    description: Whether to run the clusters list in the specified order, or shuffle all the clusters randomly
