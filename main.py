@@ -52,8 +52,12 @@ def main(max_concurrent, test_plan, service_config):
     swarm.finalize()
 
 
-def execute_plan(agents_taskpool, clusters_taskpool, test_plan, swarm: Swarm):
-    clusters = [(c["single_node"], c["num_workers"], c["with_nmstate"]) for c in test_plan["clusters"] for _ in range(c["amount"])]
+def execute_plan(agents_taskpool: TaskPool, clusters_taskpool: TaskPool, test_plan, swarm: Swarm):
+    clusters = [
+        (c["single_node"], c["num_workers"], c.get("with_nmstate", False), c.get("just_infraenv", False))
+        for c in test_plan["clusters"]
+        for _ in range(c["amount"])
+    ]
 
     if test_plan.get("shuffle", False):
         shuffle(clusters)
@@ -67,8 +71,8 @@ def execute_plan(agents_taskpool, clusters_taskpool, test_plan, swarm: Swarm):
     # threads, saturating the thread pool, and as a result the clusters are in
     # a dead lock because non of them have enough agents to finish the
     # installation (a finished installation is necessary for agents to die and
-    # make space in the thread pool). This synchronization of events events
-    # makes it so that only a single cluster can have a partial amount of
+    # make space in the thread pool). This synchronization of events makes it
+    # so that only a single cluster at a time may have a partial amount of
     # agents launched. One cluster's "I've launched all of my agents" event is
     # another cluster's "can start all agents" event.
 
@@ -82,7 +86,7 @@ def execute_plan(agents_taskpool, clusters_taskpool, test_plan, swarm: Swarm):
     previous_cluster_started_all_agents = Event()
     previous_cluster_started_all_agents.set()
 
-    for cluster_index, (single_node, num_workers, with_nmstate) in enumerate(clusters):
+    for cluster_index, (single_node, num_workers, with_nmstate, just_infraenv) in enumerate(clusters):
         current_cluster_started_all_agents = Event()
 
         clusters_taskpool.submit(
@@ -92,6 +96,7 @@ def execute_plan(agents_taskpool, clusters_taskpool, test_plan, swarm: Swarm):
             single_node,
             num_workers,
             with_nmstate,
+            just_infraenv,
             can_start_agents=previous_cluster_started_all_agents,
             started_all_agents=current_cluster_started_all_agents,
         )

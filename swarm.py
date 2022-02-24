@@ -383,13 +383,14 @@ class Swarm(RetryingStateMachine):
         self.kube_cache_thread.join()
 
     def launch_cluster(
-        self, index, task_pool, single_node, num_workers, with_nmstate, can_start_agents: Event, started_all_agents: Event
+        self, index, task_pool, single_node, num_workers, with_nmstate, just_infraenv, can_start_agents: Event, started_all_agents: Event
     ):
         cluster = Cluster(
             ClusterConfig(
                 logging=self.logging,
                 single_node=single_node,
                 with_nmstate=with_nmstate,
+                just_infraenv=just_infraenv,
                 num_workers=num_workers,
                 storage_dir=self.swarm_dir,
                 ssh_pub_key=self.ssh_pub_key,

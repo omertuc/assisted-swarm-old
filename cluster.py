@@ -40,6 +40,7 @@ class ClusterConfig:
     can_start_agents: Event
     started_all_agents: Event
     with_nmstate: bool
+    just_infraenv: bool
 
 
 class Cluster(RetryingStateMachine, WithContainerConfigs):
@@ -140,29 +141,30 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
         return ":".join(f"{o:02x}" for o in octets)
 
     def generate_manifests(self, next_state):
-        all_manifests = []
-
-        per_cluster_manifets = (
+        per_cluster_manifests = [
             "namespace",
-            "agentclusterinstall",
-            "clusterdeployment",
-            "clusterimageset",
             "secret_pull",
-        )
+            "infraenv",
+        ]
 
-        # Another option was to have this if as part of the infraenv j2 template
-        # but for simplicity of understanding the flow I preffered to place it here
-        if self.cluster_config.with_nmstate:
-            per_cluster_manifets += ("nmstate", "infraenv_nmstate")
-        else:
-            per_cluster_manifets += ("infraenv",)
+        if not self.cluster_config.just_infraenv:
+            per_cluster_manifests.extend(
+                (
+                    "clustermetadata",
+                    "clusterdeployment",
+                    "clusterimageset",
+                )
+            )
+
+        if not self.cluster_config.with_nmstate:
+            per_cluster_manifests.append("nmstate")
 
         per_agent_manifests = (
             "baremetalhost",
             "secret_bmh",
         )
 
-        params = {
+        template_params = {
             "release_image": self.cluster_config.release_image,
             "machine_network": "10.123.0.0/16",
             "ssh_pub_key": self.cluster_config.ssh_pub_key,
@@ -171,15 +173,20 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
             "num_workers": self.num_workers,
             "cluster_identifier": self.identifier,
             "single_node": self.cluster_config.single_node,
+            "just_infraenv": self.cluster_config.just_infraenv,
             "api_vip": "10.123.255.253",
             "ingress_vip": "10.123.255.254",
         }
 
+        all_rendered_manifests = []
+
         def render(manifest_name, **extra_params):
             with (Path("manifests") / f"{manifest_name}.yaml.j2").open() as manifest_file:
-                all_manifests.append(jinja2.Template(manifest_file.read()).render(**params, **extra_params))
+                all_rendered_manifests.append(
+                    jinja2.Template(manifest_file.read()).render(**template_params, **extra_params)
+                )
 
-        for manifest_name in per_cluster_manifets:
+        for manifest_name in per_cluster_manifests:
             render(manifest_name)
 
         for agent_index in range(self.total_agents):
@@ -191,7 +198,7 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
                     role="master" if agent_index < self.num_control_plane else "worker",
                 )
 
-        self.manifests = "\n---\n".join(all_manifests)
+        self.manifests = "\n---\n".join(all_rendered_manifests)
 
         with open(self.manifest_dir / "manifests.yaml", "w") as f:
             f.write(self.manifests)
