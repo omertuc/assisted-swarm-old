@@ -3,6 +3,7 @@ kind: InfraEnv
 metadata:
   name: {{ cluster_identifier }}
   namespace: {{ cluster_identifier }}
+  labels: {{ infraenv_labels }}
 spec:
 {% if not just_infraenv %}
   clusterRef:

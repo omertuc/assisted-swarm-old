@@ -41,6 +41,7 @@ class ClusterConfig:
     started_all_agents: Event
     with_nmstate: bool
     just_infraenv: bool
+    infraenv_labels: dict[str, str]
 
 
 class Cluster(RetryingStateMachine, WithContainerConfigs):
@@ -174,6 +175,7 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
             "cluster_identifier": self.identifier,
             "single_node": self.cluster_config.single_node,
             "just_infraenv": self.cluster_config.just_infraenv,
+            "infraenv_labels": json.dumps(self.cluster_config.infraenv_labels, separators=(",", ":")),
             "api_vip": "10.123.255.253",
             "ingress_vip": "10.123.255.254",
         }

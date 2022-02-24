@@ -54,7 +54,13 @@ def main(max_concurrent, test_plan, service_config):
 
 def execute_plan(agents_taskpool: TaskPool, clusters_taskpool: TaskPool, test_plan, swarm: Swarm):
     clusters = [
-        (c["single_node"], c["num_workers"], c.get("with_nmstate", False), c.get("just_infraenv", False))
+        (
+            c["single_node"],
+            c["num_workers"],
+            c.get("with_nmstate", False),
+            c.get("just_infraenv", False),
+            c.get("infraenv_labels", {}),
+        )
         for c in test_plan["clusters"]
         for _ in range(c["amount"])
     ]
@@ -86,17 +92,18 @@ def execute_plan(agents_taskpool: TaskPool, clusters_taskpool: TaskPool, test_pl
     previous_cluster_started_all_agents = Event()
     previous_cluster_started_all_agents.set()
 
-    for cluster_index, (single_node, num_workers, with_nmstate, just_infraenv) in enumerate(clusters):
+    for cluster_index, (single_node, num_workers, with_nmstate, just_infraenv, infraenv_labels) in enumerate(clusters):
         current_cluster_started_all_agents = Event()
 
         clusters_taskpool.submit(
             swarm.launch_cluster,
-            cluster_index,
-            agents_taskpool,
-            single_node,
-            num_workers,
-            with_nmstate,
-            just_infraenv,
+            index=cluster_index,
+            taskpool=agents_taskpool,
+            single_node=single_node,
+            num_workers=num_workers,
+            with_nmstate=with_nmstate,
+            just_infraenv=just_infraenv,
+            infraenv_labels=infraenv_labels,
             can_start_agents=previous_cluster_started_all_agents,
             started_all_agents=current_cluster_started_all_agents,
         )

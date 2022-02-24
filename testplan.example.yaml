@@ -7,14 +7,18 @@ clusters:
   - single_node: false
     num_workers: 3
     amount: 1
-  # Run 2 3-control-plane 10-worker clusters
+  # Run 2 3-control-plane 10-worker clusters on the Sun
   - single_node: false
     num_workers: 10
     amount: 2
-  # Run a single compact cluster
+    infranev_labels:
+      agentclusterinstalls.extensions.hive.openshift.io/location: Sun
+  # Run a single compact cluster on the moon
   - single_node: false
     num_workers: 0
     with_nmstate: true
+    infranev_labels:
+      agentclusterinstalls.extensions.hive.openshift.io/location: Moon
     amount: 1
 # Run the clusters in the clusters list in random order rather than the listed order
 shuffle: true
