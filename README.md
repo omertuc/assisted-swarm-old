@@ -37,6 +37,11 @@ Option (2) is what this repo is. Originally this repo contained the patches to m
 but today the patches have been upstreamed and now the agent/installer/controller have a "dry run" mode that 
 does exactly that, and this repo makes use of that
 
+# Architecture
+
+![Alt text](./docs/swarm.svg)
+<img src="./docs/swarm.svg">
+
 # TODO
 - [ ] Run with auth enabled (load testing without auth is a bit unfair - I presume it adds a lot of CPU usage)
 - [ ] Query prometheus, extract interesting metrics (graphana dashboards? matplotlib?)
