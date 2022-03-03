@@ -158,7 +158,7 @@ class Cluster(RetryingStateMachine, WithContainerConfigs):
                 )
             )
 
-        if not self.cluster_config.with_nmstate:
+        if self.cluster_config.with_nmstate:
             per_cluster_manifests.append("nmstate")
 
         per_agent_manifests = (
