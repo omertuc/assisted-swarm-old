@@ -1,0 +1,12 @@
+FROM quay.io/centos/centos:stream8
+
+ARG WORK_DIR=/data
+
+RUN mkdir $WORK_DIR && chmod 775 $WORK_DIR
+COPY --from=quay.io/edge-infrastructure/assisted-installer:latest /assisted-installer-controller/deploy /assisted-installer-controller/deploy
+COPY ./dry-installer /usr/local/bin/dry-installer
+RUN chmod ug+x /usr/local/bin/dry-installer
+COPY ./build/assisted-swarm /assisted-swarm
+ENV GODEBUG=madvdontneed=1
+ENV GOGC=50
+CMD ["/assisted-swarm"]
